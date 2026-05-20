@@ -102,6 +102,11 @@
             padding: 1.5rem;
         }
         input, select { width: 100%; padding: 0.7rem; border-radius: 1rem; margin: 0.4rem 0; border: 1px solid #cbd5e1; }
+        @media print {
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea { position: absolute; top: 0; left: 0; width: 58mm; padding: 2mm; font-size: 10pt; }
+        }
         .badge { font-size: 0.7rem; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 2rem; }
     </style>
 </head>
@@ -161,6 +166,8 @@
         </div>
     </div>
 
+    <div id="printArea" style="display: none;"></div>
+
     <script>
         let currentStaffId = null, currentSessionId = null, html5QrCode = null, scannerActive = false;
         let autoRestartScanner = null;
@@ -191,6 +198,7 @@
             await loadPresentList();
         }
 
+        // Scanner
         async function startScanner() {
             if (scannerActive) return;
             html5QrCode = new Html5Qrcode("reader");
@@ -220,8 +228,9 @@
 
         function onScanError(err) { console.log(err); }
 
+        // Processamento principal do QR
         async function processToken(token) {
-            // Busca o token
+            // 1. Buscar token
             const { data: tokenData, error } = await supabaseClient
                 .from('kids_temporary_tokens')
                 .select('*, child:child_id(id, name, allergies, family_id)')
@@ -233,19 +242,21 @@
                 return;
             }
 
+            // Verificar expiração
             if (new Date(tokenData.expires_at) < new Date()) {
-                document.getElementById('scanResult').innerHTML = '❌ QR expirado.';
+                document.getElementById('scanResult').innerHTML = '❌ QR expirado. Peça para gerar novo.';
                 return;
             }
 
-            // Se já usado para checkout, avisa
+            // Caso 1: Token já foi usado para checkout
             if (tokenData.used_for_checkout) {
-                document.getElementById('scanResult').innerHTML = '⚠️ QR já utilizado para saída.';
+                document.getElementById('scanResult').innerHTML = '⚠️ Este QR já foi utilizado para saída.';
                 return;
             }
 
-            // Se já usado para check-in, faz checkout
-            if (tokenData.used_for_checkin && tokenData.checkin_id) {
+            // Caso 2: Token já foi usado para check-in -> deve fazer checkout
+            if (tokenData.used_for_checkin && !tokenData.used_for_checkout) {
+                // Buscar o check-in ativo associado a este token
                 const { data: checkin, error: chError } = await supabaseClient
                     .from('kids_check_ins')
                     .select('*, child:child_id(name)')
@@ -254,11 +265,11 @@
                     .single();
 
                 if (chError || !checkin) {
-                    document.getElementById('scanResult').innerHTML = '❌ Check-out inválido.';
+                    document.getElementById('scanResult').innerHTML = '❌ Check-out inválido (check-in não encontrado ou já finalizado).';
                     return;
                 }
 
-                // Realiza checkout
+                // Realizar checkout
                 await supabaseClient
                     .from('kids_check_ins')
                     .update({ checked_out_at: new Date().toISOString() })
@@ -274,10 +285,10 @@
                 return;
             }
 
-            // Se não usado para check-in, faz check-in
+            // Caso 3: Token novo (ainda não usado para check-in)
             if (!tokenData.used_for_checkin) {
-                // Verifica se já existe check-in ativo para essa criança nesta sessão
-                const { data: existing } = await supabaseClient
+                // Validar se a criança já não tem um check-in ativo nessa sessão (anti duplicidade)
+                const { data: existingCheckin } = await supabaseClient
                     .from('kids_check_ins')
                     .select('id')
                     .eq('child_id', tokenData.child_id)
@@ -285,13 +296,13 @@
                     .is('checked_out_at', null)
                     .maybeSingle();
 
-                if (existing) {
-                    document.getElementById('scanResult').innerHTML = `⚠️ ${tokenData.child.name} já está com check-in ativo!`;
+                if (existingCheckin) {
+                    document.getElementById('scanResult').innerHTML = `⚠️ ${tokenData.child.name} já está com check-in ativo nesta sessão.`;
                     return;
                 }
 
-                // Cria check-in
-                const { data: checkin, error: ciError } = await supabaseClient
+                // Criar check-in
+                const { data: newCheckin, error: ciError } = await supabaseClient
                     .from('kids_check_ins')
                     .insert({
                         child_id: tokenData.child_id,
@@ -303,115 +314,80 @@
                     .single();
 
                 if (ciError) {
-                    document.getElementById('scanResult').innerHTML = '❌ Erro no check-in.';
+                    document.getElementById('scanResult').innerHTML = '❌ Erro ao registrar check-in.';
                     return;
                 }
 
-                // Atualiza token
+                // Atualizar token: usado para check-in e guardar o ID do check-in
                 await supabaseClient
                     .from('kids_temporary_tokens')
-                    .update({ used_for_checkin: true, checkin_id: checkin.id })
+                    .update({ used_for_checkin: true, checkin_id: newCheckin.id })
                     .eq('id', tokenData.id);
 
                 document.getElementById('scanResult').innerHTML = `✅ Check-in: ${tokenData.child.name}`;
                 await loadPresentList();
 
-                // Pergunta se quer imprimir etiqueta
+                // Perguntar se deseja imprimir etiqueta
                 if (confirm(`Imprimir etiqueta para ${tokenData.child.name}?`)) {
-                    printLabel(token, tokenData.child.name, tokenData.child.allergies, checkin.id);
+                    printLabel(tokenData.token, tokenData.child.name, tokenData.child.allergies, newCheckin.id);
                 }
                 return;
             }
         }
 
-        // Função de impressão usando iframe para não conflitar
+        // Função de impressão (corrigida)
         function printLabel(qrToken, childName, allergies, checkinId) {
             const sessionName = document.getElementById('sessionSelect').selectedOptions[0]?.text || 'Culto';
             const now = new Date().toLocaleString();
-            // Criar um elemento temporário para gerar o QR code
             const tempDiv = document.createElement('div');
             new QRCode(tempDiv, { text: qrToken, width: 120, height: 120 });
-            
-            // Aguardar o QR ser gerado
+
             setTimeout(() => {
-                let qrImageSrc = '';
-                const canvas = tempDiv.querySelector('canvas');
-                if (canvas) {
-                    qrImageSrc = canvas.toDataURL();
-                } else {
-                    const img = tempDiv.querySelector('img');
-                    if (img && img.src) qrImageSrc = img.src;
+                let qrSrc = '';
+                const img = tempDiv.querySelector('img');
+                if (img && img.src) qrSrc = img.src;
+                else {
+                    const canvas = tempDiv.querySelector('canvas');
+                    if (canvas) qrSrc = canvas.toDataURL();
                 }
-                if (!qrImageSrc) {
-                    alert('Erro ao gerar QR para impressão');
-                    return;
-                }
-                
-                const printHtml = `
-                    <html>
-                    <head>
-                        <title>Etiqueta Kids</title>
-                        <style>
-                            body { margin: 0; padding: 0; font-family: monospace; }
-                            .label {
-                                width: 58mm;
-                                padding: 2mm;
-                                font-size: 10pt;
-                            }
-                            .label div { margin-bottom: 2px; }
-                            .qr { text-align: center; margin-top: 4px; }
-                            img { width: 80px; height: 80px; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="label">
-                            <div style="text-align:center; font-weight:bold;">⛪ Kids Checkin</div>
-                            <div><strong>Criança:</strong> ${escapeHtml(childName)}</div>
-                            ${allergies ? `<div><strong>Alergias:</strong> ${escapeHtml(allergies)}</div>` : ''}
-                            <div><strong>Sessão:</strong> ${sessionName}</div>
-                            <div><strong>Check-in:</strong> ${now}</div>
-                            <div class="qr">
-                                <img src="${qrImageSrc}" alt="QR"><br>
-                                <small>Escanear para saída</small>
-                            </div>
+                const html = `
+                    <div style="width: 58mm; padding: 2mm;">
+                        <div style="text-align:center; font-weight:bold;">⛪ Kids Checkin</div>
+                        <div><strong>Criança:</strong> ${escapeHtml(childName)}</div>
+                        ${allergies ? `<div><strong>Alergias:</strong> ${escapeHtml(allergies)}</div>` : ''}
+                        <div><strong>Sessão:</strong> ${escapeHtml(sessionName)}</div>
+                        <div><strong>Check-in:</strong> ${now}</div>
+                        <div style="text-align:center; margin-top:4px;">
+                            <img src="${qrSrc}" width="80" height="80"><br>
+                            <small>Escanear para saída</small>
                         </div>
-                    </body>
-                    </html>
+                    </div>
                 `;
-                
-                // Usar iframe para impressão
-                const iframe = document.createElement('iframe');
-                iframe.style.position = 'absolute';
-                iframe.style.width = '0px';
-                iframe.style.height = '0px';
-                iframe.style.border = 'none';
-                document.body.appendChild(iframe);
-                const iframeDoc = iframe.contentWindow.document;
-                iframeDoc.open();
-                iframeDoc.write(printHtml);
-                iframeDoc.close();
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-                setTimeout(() => {
-                    document.body.removeChild(iframe);
-                }, 1000);
-            }, 500);
+                const printDiv = document.getElementById('printArea');
+                printDiv.innerHTML = html;
+                printDiv.style.display = 'block';
+                window.print();
+                printDiv.style.display = 'none';
+            }, 300);
         }
 
-        // Reimpressão manual
+        // Reimpressão manual a partir da lista de presentes
         async function reprintLabelFromList(checkinId) {
-            const { data: token } = await supabaseClient
+            const { data: token, error } = await supabaseClient
                 .from('kids_temporary_tokens')
                 .select('token, child:child_id(name, allergies)')
                 .eq('checkin_id', checkinId)
                 .single();
-            if (token) {
-                printLabel(token.token, token.child.name, token.child.allergies, checkinId);
-            } else {
-                alert('Token não encontrado para reimpressão.');
+
+            if (error || !token) {
+                alert('Token não encontrado para impressão. Pode ser que o check-in tenha sido feito manualmente?');
+                return;
             }
+
+            printLabel(token.token, token.child.name, token.child.allergies, checkinId);
         }
 
+        // Carregar lista de presentes
         async function loadPresentList() {
             if (!currentSessionId) return;
             const { data: checkins } = await supabaseClient
@@ -458,7 +434,7 @@
             const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkinId).single();
             if (token) await supabaseClient.from('kids_temporary_tokens').update({ used_for_checkout: true }).eq('id', token.id);
             await loadPresentList();
-            document.getElementById('scanResult').innerHTML = '✅ Check-out manual.';
+            document.getElementById('scanResult').innerHTML = '✅ Check-out manual realizado.';
         }
 
         async function removeVisitant(id) {
