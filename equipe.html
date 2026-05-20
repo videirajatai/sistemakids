@@ -9,7 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="app.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: #edf2f7; padding-bottom: 5rem; }
         .header {
             background: #0f172a;
@@ -26,6 +26,7 @@
             color: white;
             padding: 0.3rem 1rem;
             border-radius: 2rem;
+            cursor: pointer;
         }
         .container { max-width: 800px; margin: 1.2rem auto; padding: 0 1rem; }
         .card {
@@ -61,8 +62,8 @@
             flex-wrap: wrap;
         }
         .visitant-item { background: #fff3e0; border-left: 4px solid #f59e0b; }
-        .btn-checkout { background: #ef4444; color: white; border: none; padding: 0.3rem 1rem; border-radius: 2rem; margin-left: 0.5rem; }
-        .btn-print { background: #10b981; border: none; padding: 0.3rem 1rem; border-radius: 2rem; color: white; margin-left: 0.5rem; }
+        .btn-checkout { background: #ef4444; color: white; border: none; padding: 0.3rem 1rem; border-radius: 2rem; margin-left: 0.5rem; cursor: pointer; }
+        .btn-print { background: #10b981; border: none; padding: 0.3rem 1rem; border-radius: 2rem; color: white; margin-left: 0.5rem; cursor: pointer; }
         .fab-visitante {
             position: fixed;
             bottom: 1.5rem; right: 1.5rem;
@@ -122,17 +123,17 @@
         </div>
 
         <div class="card">
-            <h3>📷 Escanear QR</h3>
+            <h3>📷 Escanear QR (entrada e saída)</h3>
             <div class="scanner-box">
                 <div id="reader"></div>
                 <button class="btn-primary" id="startScannerBtn" onclick="startScanner()">📸 Abrir Câmera</button>
                 <button class="btn-outline" id="stopScannerBtn" onclick="stopScanner()" style="display:none;">Parar</button>
-                <div id="scanResult" style="margin-top: 0.8rem;"></div>
+                <div id="scanResult" style="margin-top: 0.8rem; font-weight: 500;"></div>
             </div>
         </div>
 
         <div class="card">
-            <h3>✔️ Presentes</h3>
+            <h3>✔️ Crianças presentes agora</h3>
             <div id="presentList">Carregando...</div>
         </div>
     </div>
@@ -169,6 +170,7 @@
 
     <script>
         let currentStaffId = null, currentSessionId = null, html5QrCode = null, scannerActive = false;
+        let autoRestartScanner = null;
 
         async function init() {
             const { data: { user } } = await supabaseClient.auth.getUser();
@@ -196,7 +198,7 @@
             await loadPresentList();
         }
 
-        // Scanner
+        // ========== SCANNER QR ==========
         async function startScanner() {
             if (scannerActive) return;
             html5QrCode = new Html5Qrcode("reader");
@@ -207,6 +209,7 @@
                 document.getElementById('stopScannerBtn').style.display = 'inline-block';
             } catch(e) { alert('Erro ao acessar câmera: '+e); }
         }
+
         function stopScanner() {
             if (html5QrCode && scannerActive) {
                 html5QrCode.stop();
@@ -214,92 +217,138 @@
                 document.getElementById('startScannerBtn').style.display = 'inline-block';
                 document.getElementById('stopScannerBtn').style.display = 'none';
             }
+            if (autoRestartScanner) clearTimeout(autoRestartScanner);
         }
+
         async function onScanSuccess(decodedText) {
-            stopScanner();
-            if (decodedText.startsWith('checkout_')) {
-                // Checkout via QR de etiqueta
-                const checkinId = decodedText.split('_')[1];
-                await checkoutByQR(checkinId);
-            } else {
-                // Token de família + child_id
-                await processFamilyToken(decodedText);
-            }
-            setTimeout(() => startScanner(), 3000);
+            stopScanner(); // pausa para processar
+            // Processa o token (seja para check-in ou checkout)
+            await processToken(decodedText);
+            // Reinicia a câmera após 3 segundos
+            autoRestartScanner = setTimeout(() => {
+                startScanner();
+            }, 3000);
         }
+
         function onScanError(err) { console.log(err); }
 
-        async function processFamilyToken(token) {
+        // ========== PROCESSAMENTO DO TOKEN (mesmo QR para entrada e saída) ==========
+        async function processToken(token) {
+            // 1. Buscar token na tabela
             const { data: tokenData, error } = await supabaseClient
                 .from('kids_temporary_tokens')
-                .select('*, child:child_id(id, name, allergies)')
+                .select('*, child:child_id(id, name, allergies, family_id)')
                 .eq('token', token)
-                .eq('is_used', false)
                 .gt('expires_at', new Date().toISOString())
                 .single();
+
             if (error || !tokenData) {
-                document.getElementById('scanResult').innerHTML = '❌ QR inválido ou expirado';
+                document.getElementById('scanResult').innerHTML = '❌ QR inválido ou expirado.';
                 return;
             }
-            await supabaseClient.from('kids_temporary_tokens').update({ is_used: true }).eq('id', tokenData.id);
-            // Fazer check-in apenas da criança vinculada ao token
-            const child = tokenData.child;
-            if (!child) { document.getElementById('scanResult').innerHTML = '⚠️ Criança não encontrada'; return; }
-            const { data: checkin, error: ciError } = await supabaseClient
-                .from('kids_check_ins')
-                .insert({
-                    child_id: child.id,
-                    session_id: currentSessionId,
-                    checked_in_by: currentStaffId,
-                    token_id: tokenData.id
-                })
-                .select()
-                .single();
-            if (ciError) { alert('Erro check-in'); return; }
-            document.getElementById('scanResult').innerHTML = `✅ Check-in: ${child.name}`;
-            await loadPresentList();
-            // Perguntar se quer imprimir etiqueta com QR para checkout
-            if (confirm(`Imprimir etiqueta para ${child.name}?`)) {
-                printLabelWithCheckout(checkin.id, child.name, child.allergies, null);
+
+            // Caso 1: Token ainda não usado para check-in → fazer CHECK-IN
+            if (!tokenData.used_for_checkin) {
+                // Verificar se a criança já possui check-in ativo nesta sessão (trava anti duplicidade)
+                const { data: existingCheckin } = await supabaseClient
+                    .from('kids_check_ins')
+                    .select('id')
+                    .eq('child_id', tokenData.child_id)
+                    .eq('session_id', currentSessionId)
+                    .is('checked_out_at', null)
+                    .maybeSingle();
+
+                if (existingCheckin) {
+                    document.getElementById('scanResult').innerHTML = `⚠️ ${tokenData.child.name} já está com check-in ativo! (saída pendente)`;
+                    return;
+                }
+
+                // Realizar check-in
+                const { data: checkin, error: ciError } = await supabaseClient
+                    .from('kids_check_ins')
+                    .insert({
+                        child_id: tokenData.child_id,
+                        session_id: currentSessionId,
+                        checked_in_by: currentStaffId,
+                        token_id: tokenData.id
+                    })
+                    .select()
+                    .single();
+
+                if (ciError) {
+                    document.getElementById('scanResult').innerHTML = '❌ Erro no check-in.';
+                    return;
+                }
+
+                // Atualizar token: usado para check-in e guardar o checkin_id
+                await supabaseClient
+                    .from('kids_temporary_tokens')
+                    .update({ used_for_checkin: true, checkin_id: checkin.id })
+                    .eq('id', tokenData.id);
+
+                document.getElementById('scanResult').innerHTML = `✅ Check-in: ${tokenData.child.name}`;
+                await loadPresentList();
+
+                // Imprimir etiqueta com o mesmo QR (token original)
+                if (confirm(`Imprimir etiqueta para ${tokenData.child.name}?`)) {
+                    printLabelWithSameQR(tokenData.token, tokenData.child.name, tokenData.child.allergies, null, null, checkin.id);
+                }
+            }
+            // Caso 2: Token já usado para check-in, mas ainda não para checkout → fazer CHECKOUT
+            else if (tokenData.used_for_checkin && !tokenData.used_for_checkout) {
+                // Verificar se o check-in correspondente ainda está aberto
+                const { data: checkin, error: chError } = await supabaseClient
+                    .from('kids_check_ins')
+                    .select('*, child:child_id(name)')
+                    .eq('id', tokenData.checkin_id)
+                    .is('checked_out_at', null)
+                    .single();
+
+                if (chError || !checkin) {
+                    document.getElementById('scanResult').innerHTML = '❌ Check-out inválido: criança já saiu ou não encontrada.';
+                    return;
+                }
+
+                // Realizar checkout
+                await supabaseClient
+                    .from('kids_check_ins')
+                    .update({ checked_out_at: new Date().toISOString() })
+                    .eq('id', tokenData.checkin_id);
+
+                // Marcar token como usado para checkout
+                await supabaseClient
+                    .from('kids_temporary_tokens')
+                    .update({ used_for_checkout: true })
+                    .eq('id', tokenData.id);
+
+                document.getElementById('scanResult').innerHTML = `✅ Check-out: ${checkin.child.name}`;
+                await loadPresentList();
+            }
+            else {
+                document.getElementById('scanResult').innerHTML = '⚠️ Este QR já foi utilizado para saída.';
             }
         }
 
-        async function checkoutByQR(checkinId) {
-            const { data: checkin, error } = await supabaseClient
-                .from('kids_check_ins')
-                .select('*, child:child_id(name)')
-                .eq('id', checkinId)
-                .is('checked_out_at', null)
-                .single();
-            if (error || !checkin) {
-                document.getElementById('scanResult').innerHTML = '❌ Check-out inválido ou já realizado';
-                return;
-            }
-            await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
-            document.getElementById('scanResult').innerHTML = `✅ Check-out: ${checkin.child.name}`;
-            await loadPresentList();
-        }
-
-        function printLabelWithCheckout(checkinId, childName, allergies, responsibleName, responsiblePhone = '') {
+        // ========== IMPRESSÃO DE ETIQUETA COM O MESMO QR ==========
+        function printLabelWithSameQR(qrToken, childName, allergies, responsibleName, responsiblePhone, checkinId) {
             const sessionName = document.getElementById('sessionSelect').selectedOptions[0]?.text || 'Culto';
             const now = new Date().toLocaleString();
-            const checkoutToken = `checkout_${checkinId}`;
-            // Gerar QR code em canvas
+            // Gerar QR code do token (mesmo token)
             const qrDiv = document.createElement('div');
-            new QRCode(qrDiv, { text: checkoutToken, width: 120, height: 120 });
+            new QRCode(qrDiv, { text: qrToken, width: 120, height: 120 });
             setTimeout(() => {
                 const qrImage = qrDiv.querySelector('img')?.src || '';
                 const labelHTML = `
                     <div style="width: 58mm; padding: 2mm; font-family: monospace; font-size: 10pt;">
                         <div style="text-align: center; font-weight: bold;">⛪ Kids Checkin</div>
-                        <div><strong>Criança:</strong> ${childName}</div>
-                        ${allergies ? `<div><strong>Alergias:</strong> ${allergies}</div>` : ''}
+                        <div><strong>Criança:</strong> ${escapeHtml(childName)}</div>
+                        ${allergies ? `<div><strong>Alergias:</strong> ${escapeHtml(allergies)}</div>` : ''}
                         <div><strong>Responsável:</strong> ${responsibleName || 'Família cadastrada'}</div>
                         ${responsiblePhone ? `<div><strong>Telefone:</strong> ${responsiblePhone}</div>` : ''}
                         <div><strong>Sessão:</strong> ${sessionName}</div>
                         <div><strong>Check-in:</strong> ${now}</div>
                         <div style="text-align: center; margin-top: 4px;">
-                            <img src="${qrImage}" width="80" height="80" alt="QR checkout">
+                            <img src="${qrImage}" width="80" height="80" alt="QR para saída">
                             <div style="font-size: 8pt;">Escanear para saída</div>
                         </div>
                     </div>
@@ -312,57 +361,7 @@
             }, 500);
         }
 
-        // Visitante
-        async function registerVisitant() {
-            const childName = document.getElementById('visitantName').value.trim();
-            const respName = document.getElementById('respName').value.trim();
-            const respPhone = document.getElementById('respPhone').value.trim();
-            if (!childName || !respName) { alert('Preencha os dados'); return; }
-            const { data: visitant, error } = await supabaseClient.from('kids_visitants').insert({
-                child_name: childName,
-                responsible_name: respName,
-                responsible_phone: respPhone,
-                session_id: currentSessionId,
-                checked_in_by: currentStaffId
-            }).select().single();
-            if (error) { alert(error.message); return; }
-            alert('Visitante registrado');
-            closeModal();
-            await loadPresentList();
-            // Como visitante não tem checkin na tabela kids_check_ins, geramos um ID fictício? 
-            // Para simplificar, vamos gerar um check-in na tabela kids_check_ins também?
-            // Melhor: criamos um check-in para visitante na mesma tabela? Ou imprimimos etiqueta com token custom?
-            // Vamos criar um check-in para o visitante, mas sem child_id. Precisamos adaptar.
-            // Por ora, apenas registramos na lista de visitantes e imprimimos etiqueta sem QR checkout.
-            if (confirm(`Imprimir etiqueta para ${childName}?`)) {
-                // Etiqueta sem QR (pois não há checkin_id)
-                printSimpleLabel(childName, respName, respPhone);
-            }
-            document.getElementById('visitantName').value = '';
-            document.getElementById('respName').value = '';
-            document.getElementById('respPhone').value = '';
-        }
-
-        function printSimpleLabel(childName, respName, respPhone) {
-            const sessionName = document.getElementById('sessionSelect').selectedOptions[0]?.text;
-            const now = new Date().toLocaleString();
-            const labelHTML = `
-                <div style="width: 58mm; padding: 2mm;">
-                    <div style="font-weight:bold;">Visitante</div>
-                    <div>${childName}</div>
-                    <div>Resp: ${respName}</div>
-                    <div>Tel: ${respPhone || '-'}</div>
-                    <div>${sessionName} - ${now}</div>
-                </div>
-            `;
-            const printDiv = document.getElementById('printArea');
-            printDiv.innerHTML = labelHTML;
-            printDiv.style.display = 'block';
-            window.print();
-            printDiv.style.display = 'none';
-        }
-
-        // Lista de presentes (crianças + visitantes)
+        // ========== LISTA DE PRESENTES ==========
         async function loadPresentList() {
             if (!currentSessionId) return;
             const { data: checkins } = await supabaseClient
@@ -370,18 +369,19 @@
                 .select('*, child:child_id(id, name, allergies)')
                 .eq('session_id', currentSessionId)
                 .is('checked_out_at', null);
+
             const { data: visitants } = await supabaseClient
                 .from('kids_visitants')
                 .select('*')
                 .eq('session_id', currentSessionId);
+
             let html = '';
             if (checkins?.length) {
-                html += `<h4>👶 Cadastrados</h4>`;
+                html += `<h4>👶 Crianças cadastradas</h4>`;
                 html += checkins.map(c => `
                     <div class="present-item">
-                        <div><strong>${c.child.name}</strong> ${c.child.allergies ? `<span class="badge">⚠️</span>` : ''}<br><small>${new Date(c.checked_in_at).toLocaleTimeString()}</small></div>
+                        <div><strong>${escapeHtml(c.child.name)}</strong> ${c.child.allergies ? `<span class="badge">⚠️</span>` : ''}<br><small>${new Date(c.checked_in_at).toLocaleTimeString()}</small></div>
                         <div>
-                            <button class="btn-print" onclick="printLabelWithCheckout('${c.id}', '${c.child.name}', '${c.child.allergies || ''}', null)">🖨️</button>
                             <button class="btn-checkout" onclick="checkoutManual('${c.id}')">Check-out</button>
                         </div>
                     </div>
@@ -391,28 +391,54 @@
                 html += `<h4>📝 Visitantes</h4>`;
                 html += visitants.map(v => `
                     <div class="present-item visitant-item">
-                        <div><strong>${v.child_name}</strong> (${v.responsible_name})<br><small>${new Date(v.checked_in_at).toLocaleTimeString()}</small></div>
+                        <div><strong>${escapeHtml(v.child_name)}</strong> (${escapeHtml(v.responsible_name)})<br><small>${new Date(v.checked_in_at).toLocaleTimeString()}</small></div>
                         <div>
-                            <button class="btn-print" onclick="printSimpleLabel('${v.child_name}', '${v.responsible_name}', '${v.responsible_phone || ''}')">🖨️</button>
                             <button class="btn-checkout" onclick="removeVisitant('${v.id}')">Finalizar</button>
                         </div>
                     </div>
                 `).join('');
             }
-            if (!checkins?.length && !visitants?.length) html = '<p>Nenhum presente</p>';
+            if (!checkins?.length && !visitants?.length) html = '<p>Nenhuma criança presente.</p>';
             document.getElementById('presentList').innerHTML = html;
         }
 
         async function checkoutManual(checkinId) {
             await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
+            // Também marcar o token associado como usado para checkout
+            const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkinId).single();
+            if (token) await supabaseClient.from('kids_temporary_tokens').update({ used_for_checkout: true }).eq('id', token.id);
             await loadPresentList();
+            document.getElementById('scanResult').innerHTML = '✅ Check-out manual realizado.';
         }
+
         async function removeVisitant(id) {
             await supabaseClient.from('kids_visitants').delete().eq('id', id);
             await loadPresentList();
         }
 
-        // Sessão
+        // ========== VISITANTE (sem QR, apenas registro) ==========
+        async function registerVisitant() {
+            const childName = document.getElementById('visitantName').value.trim();
+            const respName = document.getElementById('respName').value.trim();
+            const respPhone = document.getElementById('respPhone').value.trim();
+            if (!childName || !respName) { alert('Preencha os dados'); return; }
+            const { error } = await supabaseClient.from('kids_visitants').insert({
+                child_name: childName,
+                responsible_name: respName,
+                responsible_phone: respPhone,
+                session_id: currentSessionId,
+                checked_in_by: currentStaffId
+            });
+            if (error) { alert(error.message); return; }
+            alert('Visitante registrado');
+            closeModal();
+            await loadPresentList();
+            document.getElementById('visitantName').value = '';
+            document.getElementById('respName').value = '';
+            document.getElementById('respPhone').value = '';
+        }
+
+        // ========== CRIAÇÃO DE SESSÃO ==========
         function openSessionModal() { document.getElementById('sessionModal').style.display = 'flex'; }
         function closeSessionModal() { document.getElementById('sessionModal').style.display = 'none'; }
         async function createSession() {
@@ -433,7 +459,21 @@
 
         function openVisitanteModal() { document.getElementById('visitanteModal').style.display = 'flex'; }
         function closeModal() { document.getElementById('visitanteModal').style.display = 'none'; }
-        async function logout() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'index.html';
+        }
 
         init();
     </script>
