@@ -20,7 +20,6 @@
             padding-bottom: 5rem;
         }
 
-        /* Header */
         .header {
             background: linear-gradient(135deg, #1e293b, #0f172a);
             color: white;
@@ -57,14 +56,12 @@
             background: rgba(255,255,255,0.3);
         }
 
-        /* Container principal */
         .container {
             max-width: 700px;
             margin: 1.5rem auto;
             padding: 0 1rem;
         }
 
-        /* Cards */
         .card {
             background: white;
             border-radius: 1.5rem;
@@ -80,7 +77,6 @@
             box-shadow: 0 12px 20px rgba(0,0,0,0.08);
         }
 
-        /* Lista de crianças */
         .child-item {
             display: flex;
             align-items: center;
@@ -149,7 +145,6 @@
             background: #f1f5f9;
         }
 
-        /* QR Code */
         .qr-preview {
             background: #f8fafc;
             border-radius: 1rem;
@@ -175,15 +170,19 @@
             transform: scale(1.01);
         }
 
-        /* Histórico */
         .history-item {
             border-bottom: 1px solid #e2e8f0;
             padding: 0.6rem 0;
             font-size: 0.9rem;
             color: #334155;
         }
+        .active-checkin {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding-left: 0.5rem;
+            font-weight: 500;
+        }
 
-        /* FAB (botão flutuante) */
         .fab {
             position: fixed;
             bottom: 2rem;
@@ -208,7 +207,6 @@
             background: linear-gradient(120deg, #5a67d8, #6b46a0);
         }
 
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -471,10 +469,10 @@
                         </div>
                     </div>
                 `).join('');
-                select.innerHTML = data.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                select.innerHTML = `<option value="">-- Selecione uma criança --</option>` + data.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
             } else {
                 container.innerHTML = '<p>Nenhuma criança cadastrada. Clique no botão + para adicionar.</p>';
-                select.innerHTML = '<option>-- selecione --</option>';
+                select.innerHTML = '<option value="">-- selecione --</option>';
             }
         }
 
@@ -611,8 +609,8 @@
 
         // ==================== QR CODE TEMPORÁRIO ====================
         async function generateQR() {
-            const childSelect = document.getElementById('childSelect');
-            if (!childSelect.value || !currentFamilyId) {
+            const childId = document.getElementById('childSelect').value;
+            if (!childId) {
                 alert('Selecione uma criança para gerar o QR Code.');
                 return;
             }
@@ -624,6 +622,7 @@
                 .from('kids_temporary_tokens')
                 .insert({
                     family_id: currentFamilyId,
+                    child_id: childId,  // associar token à criança específica
                     token: token,
                     expires_at: expiresAt.toISOString(),
                     is_used: false
@@ -661,14 +660,14 @@
                 .select('*, child:child_id(name), session:session_id(name, session_date)')
                 .in('child_id', childIds)
                 .order('checked_in_at', { ascending: false })
-                .limit(20);
+                .limit(30);
 
             const historyDiv = document.getElementById('historyList');
             if (checkins && checkins.length) {
                 historyDiv.innerHTML = checkins.map(ci => `
-                    <div class="history-item">
-                        ✅ <strong>${ci.child.name}</strong> - ${ci.session.name} (${new Date(ci.checked_in_at).toLocaleString()})
-                        ${ci.checked_out_at ? ` - Saída: ${new Date(ci.checked_out_at).toLocaleTimeString()}` : ''}
+                    <div class="history-item ${!ci.checked_out_at ? 'active-checkin' : ''}">
+                        ✅ <strong>${escapeHtml(ci.child.name)}</strong> - ${ci.session.name} (${new Date(ci.checked_in_at).toLocaleString()})
+                        ${!ci.checked_out_at ? ' <span style="color:#2563eb;">(ATIVO)</span>' : ` - Saída: ${new Date(ci.checked_out_at).toLocaleTimeString()}`}
                     </div>
                 `).join('');
             } else {
