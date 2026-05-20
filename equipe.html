@@ -228,114 +228,87 @@
 
         function onScanError(err) { console.log(err); }
 
-        // Processamento principal do QR
+        // Lógica principal: check-in/checkout baseado em existência de check-in ativo
         async function processToken(token) {
-            // 1. Buscar token
-            const { data: tokenData, error } = await supabaseClient
+            // 1. Buscar token para obter child_id
+            const { data: tokenData, error: tokenError } = await supabaseClient
                 .from('kids_temporary_tokens')
-                .select('*, child:child_id(id, name, allergies, family_id)')
+                .select('*, child:child_id(id, name, allergies)')
                 .eq('token', token)
                 .single();
 
-            if (error || !tokenData) {
+            if (tokenError || !tokenData) {
                 document.getElementById('scanResult').innerHTML = '❌ QR inválido.';
                 return;
             }
 
-            // Verificar expiração
             if (new Date(tokenData.expires_at) < new Date()) {
-                document.getElementById('scanResult').innerHTML = '❌ QR expirado. Peça para gerar novo.';
+                document.getElementById('scanResult').innerHTML = '❌ QR expirado.';
                 return;
             }
 
-            // Caso 1: Token já foi usado para checkout
-            if (tokenData.used_for_checkout) {
-                document.getElementById('scanResult').innerHTML = '⚠️ Este QR já foi utilizado para saída.';
+            const childId = tokenData.child_id;
+            const childName = tokenData.child?.name || 'Criança';
+
+            // 2. Verificar se existe check-in ativo para essa criança na sessão atual
+            const { data: activeCheckin, error: checkError } = await supabaseClient
+                .from('kids_check_ins')
+                .select('*')
+                .eq('child_id', childId)
+                .eq('session_id', currentSessionId)
+                .is('checked_out_at', null)
+                .maybeSingle();
+
+            if (checkError) {
+                document.getElementById('scanResult').innerHTML = '❌ Erro ao verificar check-in.';
                 return;
             }
 
-            // Caso 2: Token já foi usado para check-in -> deve fazer checkout
-            if (tokenData.used_for_checkin && !tokenData.used_for_checkout) {
-                // Buscar o check-in ativo associado a este token
-                const { data: checkin, error: chError } = await supabaseClient
-                    .from('kids_check_ins')
-                    .select('*, child:child_id(name)')
-                    .eq('id', tokenData.checkin_id)
-                    .is('checked_out_at', null)
-                    .single();
-
-                if (chError || !checkin) {
-                    document.getElementById('scanResult').innerHTML = '❌ Check-out inválido (check-in não encontrado ou já finalizado).';
-                    return;
-                }
-
-                // Realizar checkout
-                await supabaseClient
+            // Se existe check-in ativo -> FAZ CHECKOUT
+            if (activeCheckin) {
+                const { error: updateError } = await supabaseClient
                     .from('kids_check_ins')
                     .update({ checked_out_at: new Date().toISOString() })
-                    .eq('id', tokenData.checkin_id);
+                    .eq('id', activeCheckin.id);
 
-                await supabaseClient
-                    .from('kids_temporary_tokens')
-                    .update({ used_for_checkout: true })
-                    .eq('id', tokenData.id);
+                if (updateError) {
+                    document.getElementById('scanResult').innerHTML = '❌ Erro no check-out.';
+                    return;
+                }
 
-                document.getElementById('scanResult').innerHTML = `✅ Check-out: ${checkin.child.name}`;
+                document.getElementById('scanResult').innerHTML = `✅ Check-out: ${childName}`;
                 await loadPresentList();
                 return;
             }
 
-            // Caso 3: Token novo (ainda não usado para check-in)
-            if (!tokenData.used_for_checkin) {
-                // Validar se a criança já não tem um check-in ativo nessa sessão (anti duplicidade)
-                const { data: existingCheckin } = await supabaseClient
-                    .from('kids_check_ins')
-                    .select('id')
-                    .eq('child_id', tokenData.child_id)
-                    .eq('session_id', currentSessionId)
-                    .is('checked_out_at', null)
-                    .maybeSingle();
+            // Caso contrário -> FAZ CHECK-IN
+            // Verificar se a criança está ativa (opcional)
+            const { data: newCheckin, error: insertError } = await supabaseClient
+                .from('kids_check_ins')
+                .insert({
+                    child_id: childId,
+                    session_id: currentSessionId,
+                    checked_in_by: currentStaffId,
+                    token_id: tokenData.id
+                })
+                .select()
+                .single();
 
-                if (existingCheckin) {
-                    document.getElementById('scanResult').innerHTML = `⚠️ ${tokenData.child.name} já está com check-in ativo nesta sessão.`;
-                    return;
-                }
-
-                // Criar check-in
-                const { data: newCheckin, error: ciError } = await supabaseClient
-                    .from('kids_check_ins')
-                    .insert({
-                        child_id: tokenData.child_id,
-                        session_id: currentSessionId,
-                        checked_in_by: currentStaffId,
-                        token_id: tokenData.id
-                    })
-                    .select()
-                    .single();
-
-                if (ciError) {
-                    document.getElementById('scanResult').innerHTML = '❌ Erro ao registrar check-in.';
-                    return;
-                }
-
-                // Atualizar token: usado para check-in e guardar o ID do check-in
-                await supabaseClient
-                    .from('kids_temporary_tokens')
-                    .update({ used_for_checkin: true, checkin_id: newCheckin.id })
-                    .eq('id', tokenData.id);
-
-                document.getElementById('scanResult').innerHTML = `✅ Check-in: ${tokenData.child.name}`;
-                await loadPresentList();
-
-                // Perguntar se deseja imprimir etiqueta
-                if (confirm(`Imprimir etiqueta para ${tokenData.child.name}?`)) {
-                    printLabel(tokenData.token, tokenData.child.name, tokenData.child.allergies, newCheckin.id);
-                }
+            if (insertError) {
+                document.getElementById('scanResult').innerHTML = '❌ Erro no check-in.';
                 return;
+            }
+
+            document.getElementById('scanResult').innerHTML = `✅ Check-in: ${childName}`;
+            await loadPresentList();
+
+            // Perguntar se quer imprimir etiqueta
+            if (confirm(`Imprimir etiqueta para ${childName}?`)) {
+                printLabel(token, childName, tokenData.child?.allergies || '', newCheckin.id);
             }
         }
 
-        // Função de impressão (corrigida)
+        // Impressão de etiqueta
         function printLabel(qrToken, childName, allergies, checkinId) {
             const sessionName = document.getElementById('sessionSelect').selectedOptions[0]?.text || 'Culto';
             const now = new Date().toLocaleString();
@@ -371,23 +344,23 @@
             }, 300);
         }
 
-        // Reimpressão manual a partir da lista de presentes
+        // Reimpressão manual
         async function reprintLabelFromList(checkinId) {
-            const { data: token, error } = await supabaseClient
-                .from('kids_temporary_tokens')
-                .select('token, child:child_id(name, allergies)')
-                .eq('checkin_id', checkinId)
+            const { data: checkin, error: chError } = await supabaseClient
+                .from('kids_check_ins')
+                .select('*, child:child_id(name, allergies), token:token_id(token)')
+                .eq('id', checkinId)
                 .single();
 
-            if (error || !token) {
-                alert('Token não encontrado para impressão. Pode ser que o check-in tenha sido feito manualmente?');
+            if (chError || !checkin || !checkin.token) {
+                alert('Token não encontrado para impressão.');
                 return;
             }
 
-            printLabel(token.token, token.child.name, token.child.allergies, checkinId);
+            printLabel(checkin.token.token, checkin.child.name, checkin.child.allergies || '', checkinId);
         }
 
-        // Carregar lista de presentes
+        // Lista de presentes
         async function loadPresentList() {
             if (!currentSessionId) return;
             const { data: checkins } = await supabaseClient
@@ -431,8 +404,6 @@
 
         async function checkoutManual(checkinId) {
             await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
-            const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkinId).single();
-            if (token) await supabaseClient.from('kids_temporary_tokens').update({ used_for_checkout: true }).eq('id', token.id);
             await loadPresentList();
             document.getElementById('scanResult').innerHTML = '✅ Check-out manual realizado.';
         }
