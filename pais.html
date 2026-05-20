@@ -609,42 +609,38 @@
 
         // ==================== QR CODE TEMPORÁRIO ====================
         async function generateQR() {
-            const childId = document.getElementById('childSelect').value;
-            if (!childId) {
-                alert('Selecione uma criança para gerar o QR Code.');
-                return;
-            }
-            const token = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
-            const expiresAt = new Date();
-            expiresAt.setHours(expiresAt.getHours() + 4); // 4 horas de validade
-        
-            const { error } = await supabaseClient
-                .from('kids_temporary_tokens')
-                .insert({
-                    family_id: currentFamilyId,
-                    child_id: childId,
-                    token: token,
-                    expires_at: expiresAt.toISOString(),
-                    is_used: false,           // campo antigo, pode manter
-                    used_for_checkin: false,  // importante para o fluxo
-                    used_for_checkout: false, // importante para o fluxo
-                    checkin_id: null
-                });
-        
-            if (error) {
-                alert('Erro ao gerar QR: ' + error.message);
-                return;
-            }
-        
-            const qrDiv = document.getElementById('qrcode');
-            qrDiv.innerHTML = '';
-            new QRCode(qrDiv, {
-                text: token,
-                width: 200,
-                height: 200
-            });
-            alert('QR Code gerado! Mostre para a equipe escanear. Válido por 4 horas.');
-        }
+    const childId = document.getElementById('childSelect').value;
+    if (!childId) {
+        alert('Selecione uma criança para gerar o QR Code.');
+        return;
+    }
+    const token = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 4);
+
+    const { error } = await supabaseClient
+        .from('kids_temporary_tokens')
+        .insert({
+            family_id: currentFamilyId,
+            child_id: childId,
+            token: token,
+            expires_at: expiresAt.toISOString()
+        });
+
+    if (error) {
+        alert('Erro ao gerar QR: ' + error.message);
+        return;
+    }
+
+    const qrDiv = document.getElementById('qrcode');
+    qrDiv.innerHTML = '';
+    new QRCode(qrDiv, {
+        text: token,
+        width: 200,
+        height: 200
+    });
+    alert('QR Code gerado! Válido por 4 horas.');
+}
 
         // ==================== HISTÓRICO DE CHECK-INS ====================
         async function loadHistory() {
