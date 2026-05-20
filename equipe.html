@@ -8,15 +8,28 @@
     <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
     <script src="app.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: #edf2f7; padding-bottom: 5rem; }
         .header {
             background: #0f172a;
             color: white;
             padding: 1.5rem;
             border-radius: 0 0 1.8rem 1.8rem;
+            position: relative;
         }
-        .container { max-width: 700px; margin: 1rem auto; padding: 0 1rem; }
+        .header h2 { font-size: 1.6rem; font-weight: 600; }
+        .logout-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            cursor: pointer;
+        }
+        .container { max-width: 800px; margin: 1.2rem auto; padding: 0 1rem; }
         .card {
             background: white;
             border-radius: 1.5rem;
@@ -25,17 +38,13 @@
             box-shadow: 0 6px 14px rgba(0,0,0,0.05);
             transition: 0.2s;
         }
-        .btn {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.6rem 1rem;
-            border-radius: 2rem;
-            font-weight: 500;
-            cursor: pointer;
-            margin-top: 0.5rem;
+        .scanner-box {
+            background: #f1f5f9;
+            border-radius: 1.2rem;
+            padding: 1rem;
+            text-align: center;
         }
-        .btn-outline { background: white; border: 1px solid #3b82f6; color: #3b82f6; }
+        #reader { width: 100%; max-width: 400px; margin: 0 auto; }
         .present-item {
             background: #e6f7e6;
             padding: 0.8rem;
@@ -44,9 +53,31 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
         }
-        .scanner-box { background: #f1f5f9; border-radius: 1.2rem; padding: 1rem; text-align: center; }
-        #reader { width: 100%; max-width: 400px; margin: 0 auto; }
+        .visitant-item {
+            background: #fff3e0;
+            border-left: 4px solid #f59e0b;
+        }
+        .btn-checkout {
+            background: #ef4444;
+            border: none;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            color: white;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.6rem 1rem;
+            border-radius: 2rem;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+        }
         .fab-visitante {
             position: fixed;
             bottom: 1.5rem;
@@ -63,12 +94,13 @@
             box-shadow: 0 8px 16px rgba(245,158,11,0.4);
             cursor: pointer;
             border: none;
+            z-index: 100;
         }
-        input, select { width: 100%; padding: 0.7rem; border-radius: 1rem; border: 1px solid #cbd5e1; margin: 0.4rem 0; }
         .modal {
             display: none;
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0,0,0,0.5);
             align-items: center;
             justify-content: center;
@@ -77,19 +109,43 @@
         .modal-content {
             background: white;
             width: 90%;
-            max-width: 400px;
+            max-width: 450px;
             border-radius: 1.8rem;
             padding: 1.5rem;
         }
+        input, select {
+            width: 100%;
+            padding: 0.7rem;
+            border-radius: 1rem;
+            border: 1px solid #cbd5e1;
+            margin: 0.4rem 0 0.8rem;
+        }
+        .session-selector {
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+        .card, .present-item { animation: fadeIn 0.2s ease; }
+        .badge { font-size: 0.7rem; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 2rem; }
     </style>
 </head>
 <body>
     <div class="header">
         <h2>👥 Equipe Ministerial</h2>
-        <p>Check-in e controle de crianças</p>
-        <button onclick="logout()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.3rem 1rem; border-radius: 2rem; margin-top: 0.5rem;">Sair</button>
+        <p>Check-in e controle em tempo real</p>
+        <button class="logout-btn" onclick="logout()">Sair</button>
     </div>
     <div class="container">
+        <div class="card">
+            <div class="session-selector">
+                <label style="font-weight: 500;">Sessão ativa:</label>
+                <select id="sessionSelect" onchange="changeSession()"></select>
+            </div>
+        </div>
+
         <div class="card">
             <h3>📷 Escanear QR Code (pais)</h3>
             <div class="scanner-box">
@@ -99,7 +155,7 @@
         </div>
 
         <div class="card">
-            <h3>✔️ Crianças presentes agora</h3>
+            <h3>✔️ Crianças e visitantes presentes</h3>
             <div id="presentList">Carregando...</div>
         </div>
     </div>
@@ -109,13 +165,12 @@
     <!-- Modal visitante -->
     <div id="visitanteModal" class="modal">
         <div class="modal-content">
-            <h3>Cadastrar visitante rápido</h3>
-            <input type="text" id="visitantName" placeholder="Nome da criança">
-            <input type="text" id="respName" placeholder="Nome do responsável">
+            <h3>📋 Cadastro rápido de visitante</h3>
+            <input type="text" id="visitantName" placeholder="Nome da criança *" required>
+            <input type="text" id="respName" placeholder="Nome do responsável *" required>
             <input type="tel" id="respPhone" placeholder="Telefone (opcional)">
-            <select id="sessionSelect"></select>
-            <button class="btn" onclick="registerVisitant()">Registrar e fazer check-in</button>
-            <button class="btn-outline" style="margin-top: 0.5rem;" onclick="closeModal()">Cancelar</button>
+            <button class="btn-primary" onclick="registerVisitant()">Registrar e fazer check-in</button>
+            <button class="btn-primary" style="background:#94a3b8; margin-top:0.5rem;" onclick="closeModal()">Cancelar</button>
         </div>
     </div>
 
@@ -129,21 +184,33 @@
             if (!user) { window.location.href = 'index.html'; return; }
             currentStaffId = user.id;
 
-            // Buscar sessão ativa
-            const { data: sessions } = await supabaseClient
-                .from('kids_sessions')
-                .select('id, name')
-                .eq('is_active', true)
-                .limit(1);
-            if (sessions && sessions[0]) {
-                currentSessionId = sessions[0].id;
-                const select = document.getElementById('sessionSelect');
-                select.innerHTML = sessions.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-            } else {
-                alert('Nenhuma sessão ativa. Crie uma no banco (ex: Culto de Domingo).');
-            }
-            loadPresentChildren();
+            await loadSessions();
             startScanner();
+        }
+
+        async function loadSessions() {
+            const { data: sessions, error } = await supabaseClient
+                .from('kids_sessions')
+                .select('id, name, is_active')
+                .order('session_date', { ascending: false });
+            if (error) console.error(error);
+            const select = document.getElementById('sessionSelect');
+            if (sessions && sessions.length) {
+                select.innerHTML = sessions.map(s => `<option value="${s.id}" ${s.is_active ? 'selected' : ''}>${s.name} ${s.is_active ? '(ativa)' : ''}</option>`).join('');
+                // Se houver uma ativa, usa ela; senão usa a primeira
+                const activeSession = sessions.find(s => s.is_active);
+                currentSessionId = activeSession ? activeSession.id : sessions[0].id;
+                select.value = currentSessionId;
+            } else {
+                select.innerHTML = '<option>Nenhuma sessão. Crie no banco.</option>';
+                currentSessionId = null;
+            }
+            if (currentSessionId) loadPresentList();
+        }
+
+        async function changeSession() {
+            currentSessionId = document.getElementById('sessionSelect').value;
+            await loadPresentList();
         }
 
         function startScanner() {
@@ -155,7 +222,7 @@
             await processToken(decodedText);
         }
 
-        function onScanError(err) { console.log("erro scan", err); }
+        function onScanError(err) { console.log("scan error", err); }
 
         async function processToken(token) {
             const { data: tokenData, error } = await supabaseClient
@@ -169,13 +236,16 @@
                 document.getElementById('scanResult').innerHTML = '❌ Token inválido ou expirado';
                 return;
             }
+            // Marcar token como usado
             await supabaseClient.from('kids_temporary_tokens').update({ is_used: true }).eq('id', tokenData.id);
+            // Buscar crianças ativas da família
             const { data: children } = await supabaseClient
                 .from('kids_children')
                 .select('*')
-                .eq('family_id', tokenData.family_id);
+                .eq('family_id', tokenData.family_id)
+                .eq('is_active', true);
             if (!children?.length) {
-                document.getElementById('scanResult').innerHTML = '⚠️ Família sem crianças cadastradas';
+                document.getElementById('scanResult').innerHTML = '⚠️ Nenhuma criança ativa cadastrada nesta família.';
                 return;
             }
             for (let child of children) {
@@ -187,53 +257,103 @@
                 });
             }
             document.getElementById('scanResult').innerHTML = `✅ Check-in realizado: ${children.map(c=>c.name).join(', ')}`;
-            loadPresentChildren();
+            await loadPresentList();
         }
 
-        async function loadPresentChildren() {
-            const { data } = await supabaseClient
+        async function loadPresentList() {
+            if (!currentSessionId) {
+                document.getElementById('presentList').innerHTML = '<p>Selecione uma sessão.</p>';
+                return;
+            }
+            // Buscar check-ins de crianças
+            const { data: checkins } = await supabaseClient
                 .from('kids_check_ins')
                 .select('*, child:child_id(id, name)')
                 .eq('session_id', currentSessionId)
                 .is('checked_out_at', null);
+            
+            // Buscar visitantes ativos (sem check-out) - assumindo que visitants não têm check-out separado, mas podemos adicionar campo se quiser
+            // Por enquanto, visitantes são registrados e ficam como "presentes" até o fim da sessão. Vamos mostrar todos da sessão atual que não tiveram saída.
+            // Como não temos campo checked_out_at em visitants, vamos exibi-los sempre. Para melhorar, podemos adicionar depois.
+            const { data: visitants } = await supabaseClient
+                .from('kids_visitants')
+                .select('*')
+                .eq('session_id', currentSessionId);
+            
             const container = document.getElementById('presentList');
-            if (data && data.length) {
-                container.innerHTML = data.map(c => `
+            let html = '';
+            if (checkins && checkins.length) {
+                html += `<h4>👶 Crianças cadastradas</h4>`;
+                html += checkins.map(c => `
                     <div class="present-item">
-                        <span><strong>${c.child.name}</strong> (desde ${new Date(c.checked_in_at).toLocaleTimeString()})</span>
-                        <button onclick="checkout('${c.id}')" style="background:#ef4444; border:none; padding:0.3rem 1rem; border-radius:2rem; color:white;">Check-out</button>
+                        <span><strong>${escapeHtml(c.child.name)}</strong> <span class="badge">check-in ${new Date(c.checked_in_at).toLocaleTimeString()}</span></span>
+                        <button class="btn-checkout" onclick="checkoutChild('${c.id}')">Check-out</button>
                     </div>
                 `).join('');
-            } else {
-                container.innerHTML = '<p>Nenhuma criança presente no momento.</p>';
+            }
+            if (visitants && visitants.length) {
+                html += `<h4>📝 Visitantes</h4>`;
+                html += visitants.map(v => `
+                    <div class="present-item visitant-item">
+                        <span><strong>${escapeHtml(v.child_name)}</strong> (resp: ${escapeHtml(v.responsible_name)}) <span class="badge">visitante</span></span>
+                        <button class="btn-checkout" onclick="checkoutVisitant('${v.id}')">Finalizar</button>
+                    </div>
+                `).join('');
+            }
+            if (!checkins?.length && !visitants?.length) {
+                html = '<p>Nenhuma criança ou visitante presente no momento.</p>';
+            }
+            container.innerHTML = html;
+        }
+
+        async function checkoutChild(checkinId) {
+            await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
+            await loadPresentList();
+        }
+
+        async function checkoutVisitant(visitantId) {
+            // Como a tabela kids_visitants não tem campo de saída, podemos deletar ou marcar de alguma forma.
+            // Vou remover da lista (deletar) para simplicidade.
+            if (confirm('Remover este visitante da lista de presentes?')) {
+                await supabaseClient.from('kids_visitants').delete().eq('id', visitantId);
+                await loadPresentList();
             }
         }
 
-        async function checkout(checkinId) {
-            await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
-            loadPresentChildren();
-        }
-
         async function registerVisitant() {
-            const childName = document.getElementById('visitantName').value;
-            const respName = document.getElementById('respName').value;
-            const respPhone = document.getElementById('respPhone').value;
-            const sessionId = document.getElementById('sessionSelect').value;
-            if (!childName || !respName) { alert('Preencha nome da criança e responsável'); return; }
-            await supabaseClient.from('kids_visitants').insert({
+            const childName = document.getElementById('visitantName').value.trim();
+            const respName = document.getElementById('respName').value.trim();
+            const respPhone = document.getElementById('respPhone').value.trim();
+            if (!childName || !respName) {
+                alert('Preencha nome da criança e responsável');
+                return;
+            }
+            const { error } = await supabaseClient.from('kids_visitants').insert({
                 child_name: childName,
                 responsible_name: respName,
-                responsible_phone: respPhone,
-                session_id: sessionId,
+                responsible_phone: respPhone || null,
+                session_id: currentSessionId,
                 checked_in_by: currentStaffId
             });
-            alert('Visitante registrado com sucesso!');
+            if (error) {
+                alert('Erro: ' + error.message);
+                return;
+            }
+            alert('Visitante registrado e presente!');
             closeModal();
-            // Opcional: recarregar lista de presentes (visitantes não aparecem automaticamente na lista de check-ins)
+            await loadPresentList();
+            document.getElementById('visitantName').value = '';
+            document.getElementById('respName').value = '';
+            document.getElementById('respPhone').value = '';
         }
 
-        function openVisitanteModal() { document.getElementById('visitanteModal').style.display = 'flex'; }
-        function closeModal() { document.getElementById('visitanteModal').style.display = 'none'; }
+        function openVisitanteModal() {
+            document.getElementById('visitanteModal').style.display = 'flex';
+        }
+        function closeModal() {
+            document.getElementById('visitanteModal').style.display = 'none';
+        }
+        function escapeHtml(str) { return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m;}); }
         async function logout() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
 
         initStaff();
