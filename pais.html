@@ -38,10 +38,14 @@
             margin-top: 0.3rem;
             font-size: 0.9rem;
         }
-        .logout-btn {
+        .header-buttons {
             position: absolute;
             top: 1.2rem;
             right: 1.5rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .header-buttons button {
             background: rgba(255,255,255,0.2);
             border: none;
             color: white;
@@ -52,7 +56,7 @@
             font-weight: 500;
             transition: 0.2s;
         }
-        .logout-btn:hover {
+        .header-buttons button:hover {
             background: rgba(255,255,255,0.3);
         }
 
@@ -293,9 +297,12 @@
 </head>
 <body>
     <div class="header">
-        <button class="logout-btn" onclick="logout()">Sair</button>
         <h1>👨‍👩‍👧 Família</h1>
         <p>Gerencie seus filhos e faça check-in rápido</p>
+        <div class="header-buttons">
+            <button onclick="openFamilyConfig()">⚙️ Config</button>
+            <button onclick="logout()">Sair</button>
+        </div>
     </div>
 
     <div class="container">
@@ -311,7 +318,7 @@
                 <h3>🔐 Check-in com QR Code</h3>
                 <label>Selecione a criança:</label>
                 <select id="childSelect"></select>
-                <button class="btn-generate" onclick="generateQR()">📱 Gerar QR Code (válido 2 min)</button>
+                <button class="btn-generate" onclick="generateQR()">📱 Gerar QR Code (válido 4h)</button>
                 <div id="qrcode" class="qr-preview"></div>
                 <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">Mostre o QR para a equipe no momento do check-in.</p>
             </div>
@@ -354,11 +361,28 @@
         </div>
     </div>
 
+    <!-- Modal de configuração da família -->
+    <div id="familyModal" class="modal">
+        <div class="modal-content">
+            <h3>✏️ Editar Família</h3>
+            <label>Nome da família</label>
+            <input type="text" id="familyName" placeholder="Ex: Família Silva">
+            <label>Telefone principal</label>
+            <input type="tel" id="familyPhone" placeholder="(11) 99999-9999">
+            <label>Endereço</label>
+            <textarea id="familyAddress" placeholder="Rua, número, bairro, cidade..."></textarea>
+            <label>Celula / Grupo</label>
+            <input type="text" id="familyCellGroup" placeholder="Ex: Celula de Jovens">
+            <button class="btn-primary" onclick="saveFamilyConfig()">Salvar alterações</button>
+            <button class="btn-outline" onclick="closeFamilyModal()">Cancelar</button>
+        </div>
+    </div>
+
     <script>
         // ==================== VARIÁVEIS GLOBAIS ====================
         let currentFamilyId = null;
         let currentUser = null;
-        const IMGBB_API_KEY = 'd3ec802e2dfc1896a26e44b80d489f17'; // Sua chave imgBB
+        const IMGBB_API_KEY = 'd3ec802e2dfc1896a26e44b80d489f17';
 
         // ==================== INICIALIZAÇÃO ====================
         async function loadUserAndFamily() {
@@ -399,7 +423,7 @@
             }
         }
 
-        // Criar nova família
+        // Criar nova família (simplificada, só com nome)
         async function createFamily() {
             const familyName = prompt('Digite um nome para sua família (ex: Família Souza):');
             if (!familyName) return;
@@ -431,6 +455,59 @@
             document.getElementById('qrSection').style.display = 'block';
             await loadChildren();
             await loadHistory();
+        }
+
+        // ==================== CONFIGURAÇÃO DA FAMÍLIA ====================
+        async function openFamilyConfig() {
+            if (!currentFamilyId) {
+                alert('Crie uma família primeiro.');
+                return;
+            }
+            // Carregar dados atuais da família
+            const { data: family, error } = await supabaseClient
+                .from('kids_families')
+                .select('family_name, phone, address, cell_group')
+                .eq('id', currentFamilyId)
+                .single();
+            if (error) {
+                alert('Erro ao carregar dados da família.');
+                return;
+            }
+            document.getElementById('familyName').value = family.family_name || '';
+            document.getElementById('familyPhone').value = family.phone || '';
+            document.getElementById('familyAddress').value = family.address || '';
+            document.getElementById('familyCellGroup').value = family.cell_group || '';
+            document.getElementById('familyModal').style.display = 'flex';
+        }
+
+        async function saveFamilyConfig() {
+            const familyName = document.getElementById('familyName').value.trim();
+            const phone = document.getElementById('familyPhone').value.trim();
+            const address = document.getElementById('familyAddress').value.trim();
+            const cellGroup = document.getElementById('familyCellGroup').value.trim();
+            if (!familyName) {
+                alert('O nome da família é obrigatório.');
+                return;
+            }
+            const { error } = await supabaseClient
+                .from('kids_families')
+                .update({
+                    family_name: familyName,
+                    phone: phone || null,
+                    address: address || null,
+                    cell_group: cellGroup || null
+                })
+                .eq('id', currentFamilyId);
+            if (error) {
+                alert('Erro ao salvar: ' + error.message);
+            } else {
+                alert('Dados da família atualizados!');
+                closeFamilyModal();
+            }
+        }
+
+        function closeFamilyModal() {
+            document.getElementById('familyModal').style.display = 'none';
         }
 
         // ==================== CRUD DE CRIANÇAS ====================
@@ -476,7 +553,6 @@
             }
         }
 
-        // Abrir modal para adicionar nova criança
         function openAddChildModal() {
             document.getElementById('modalTitle').innerText = 'Adicionar Criança';
             document.getElementById('childId').value = '';
@@ -489,7 +565,6 @@
             document.getElementById('childModal').style.display = 'flex';
         }
 
-        // Editar criança existente
         async function editChild(childId) {
             const { data: child, error } = await supabaseClient
                 .from('kids_children')
@@ -516,7 +591,6 @@
             document.getElementById('childModal').style.display = 'flex';
         }
 
-        // Salvar criança (com upload de foto se houver)
         async function saveChild() {
             const childId = document.getElementById('childId').value;
             const name = document.getElementById('childName').value.trim();
@@ -532,7 +606,6 @@
 
             let photoUrl = null;
 
-            // Se houver uma nova foto, faz upload para imgBB
             if (photoFile) {
                 const formData = new FormData();
                 formData.append('image', photoFile);
@@ -566,13 +639,11 @@
 
             let result;
             if (childId) {
-                // Edição
                 result = await supabaseClient
                     .from('kids_children')
                     .update(childData)
                     .eq('id', childId);
             } else {
-                // Inserção
                 result = await supabaseClient
                     .from('kids_children')
                     .insert([childData]);
@@ -587,7 +658,6 @@
             }
         }
 
-        // Excluir criança
         async function deleteChild(childId) {
             if (!confirm('Tem certeza que deseja excluir esta criança? Todos os check-ins associados também serão removidos.')) return;
             const { error } = await supabaseClient
@@ -609,38 +679,38 @@
 
         // ==================== QR CODE TEMPORÁRIO ====================
         async function generateQR() {
-    const childId = document.getElementById('childSelect').value;
-    if (!childId) {
-        alert('Selecione uma criança para gerar o QR Code.');
-        return;
-    }
-    const token = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 4);
+            const childId = document.getElementById('childSelect').value;
+            if (!childId) {
+                alert('Selecione uma criança para gerar o QR Code.');
+                return;
+            }
+            const token = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 4); // 4 horas de validade
 
-    const { error } = await supabaseClient
-        .from('kids_temporary_tokens')
-        .insert({
-            family_id: currentFamilyId,
-            child_id: childId,
-            token: token,
-            expires_at: expiresAt.toISOString()
-        });
+            const { error } = await supabaseClient
+                .from('kids_temporary_tokens')
+                .insert({
+                    family_id: currentFamilyId,
+                    child_id: childId,
+                    token: token,
+                    expires_at: expiresAt.toISOString()
+                });
 
-    if (error) {
-        alert('Erro ao gerar QR: ' + error.message);
-        return;
-    }
+            if (error) {
+                alert('Erro ao gerar QR: ' + error.message);
+                return;
+            }
 
-    const qrDiv = document.getElementById('qrcode');
-    qrDiv.innerHTML = '';
-    new QRCode(qrDiv, {
-        text: token,
-        width: 200,
-        height: 200
-    });
-    alert('QR Code gerado! Válido por 4 horas.');
-}
+            const qrDiv = document.getElementById('qrcode');
+            qrDiv.innerHTML = '';
+            new QRCode(qrDiv, {
+                text: token,
+                width: 200,
+                height: 200
+            });
+            alert('QR Code gerado! Válido por 4 horas.');
+        }
 
         // ==================== HISTÓRICO DE CHECK-INS ====================
         async function loadHistory() {
