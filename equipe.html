@@ -7,14 +7,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="app.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: #edf2f7; padding-bottom: 5rem; }
-        .header { background: #0f172a; color: white; padding: 1.5rem; border-radius: 0 0 1.8rem 1.8rem; position: relative; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
-        .header h2 { font-size: 1.6rem; }
-        .header-buttons { display: flex; gap: 0.8rem; }
+        .header { background: #0f172a; color: white; padding: 1rem 1.5rem; border-radius: 0 0 1.8rem 1.8rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .header h2 { font-size: 1.4rem; }
+        .header-buttons { display: flex; gap: 0.8rem; flex-wrap: wrap; }
         .header-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.4rem 1rem; border-radius: 2rem; cursor: pointer; transition: 0.2s; }
         .header-btn:hover { background: rgba(255,255,255,0.3); }
         .container { max-width: 800px; margin: 1.2rem auto; padding: 0 1rem; }
@@ -25,42 +25,33 @@
         .visitant-item { background: #fff3e0; border-left: 4px solid #f59e0b; }
         .btn-checkout { background: #ef4444; color: white; border: none; padding: 0.3rem 1rem; border-radius: 2rem; margin-left: 0.5rem; cursor: pointer; }
         .btn-print { background: #10b981; border: none; padding: 0.3rem 1rem; border-radius: 2rem; color: white; margin-left: 0.5rem; cursor: pointer; }
+        .btn-eye { background: #3b82f6; border: none; padding: 0.3rem 0.8rem; border-radius: 2rem; color: white; margin-left: 0.5rem; cursor: pointer; font-size: 0.9rem; }
         .fab-visitante { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #f59e0b; width: 56px; height: 56px; border-radius: 28px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: white; cursor: pointer; border: none; z-index: 100; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 200; }
-        .modal-content { background: white; width: 90%; max-width: 450px; border-radius: 1.8rem; padding: 1.5rem; }
+        .modal-content { background: white; width: 90%; max-width: 550px; border-radius: 1.8rem; padding: 1.5rem; max-height: 85vh; overflow-y: auto; }
         input, select { width: 100%; padding: 0.7rem; border-radius: 1rem; margin: 0.4rem 0; border: 1px solid #cbd5e1; }
         .badge { font-size: 0.7rem; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 2rem; }
-
-        /* Estilos para o relatório PDF (impressão) */
-        .report-container {
-            font-family: 'Segoe UI', sans-serif;
-            padding: 20px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        .report-header {
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #3b82f6;
-            padding-bottom: 10px;
-        }
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
+        .tab { padding: 0.5rem 1rem; border-radius: 2rem; cursor: pointer; background: #f1f5f9; transition: 0.2s; }
+        .tab.active { background: #3b82f6; color: white; }
+        .room-list { max-height: 400px; overflow-y: auto; }
+        .room-item { display: flex; align-items: center; gap: 1rem; padding: 0.5rem; border-bottom: 1px solid #e2e8f0; }
+        .room-item img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .room-item label { flex: 1; }
+        .parent-photo { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-right: 1rem; }
+        /* Relatório PDF */
+        .report-container { font-family: 'Segoe UI', sans-serif; padding: 20px; max-width: 1000px; margin: 0 auto; }
+        .report-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
         .report-header img { max-width: 80px; margin-bottom: 10px; }
         .report-title { font-size: 24px; font-weight: bold; color: #0f172a; }
-        .report-subtitle { color: #475569; }
         .stats-grid { display: flex; gap: 20px; justify-content: space-around; margin: 20px 0; flex-wrap: wrap; }
         .stat-card { background: #f1f5f9; border-radius: 16px; padding: 15px; text-align: center; min-width: 120px; }
         .stat-number { font-size: 32px; font-weight: bold; color: #3b82f6; }
-        .stat-label { font-size: 14px; color: #334155; }
         table { width: 100%; border-collapse: collapse; margin: 15px 0; }
         th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
         th { background: #e2e8f0; }
         .birthday { background: #fef9c3; }
-        @media print {
-            body * { visibility: hidden; }
-            #reportPrintArea, #reportPrintArea * { visibility: visible; }
-            #reportPrintArea { position: absolute; top: 0; left: 0; width: 100%; }
-            .no-print { display: none; }
-        }
+        @media print { body * { visibility: hidden; } #reportPrintArea, #reportPrintArea * { visibility: visible; } #reportPrintArea { position: absolute; top: 0; left: 0; width: 100%; } .no-print { display: none; } }
     </style>
 </head>
 <body>
@@ -81,15 +72,18 @@
         </div>
         <div class="card">
             <h3>📷 Escanear QR (entrada e saída)</h3>
-            <div class="scanner-box">
-                <div id="reader"></div>
-                <button class="btn-primary" id="startScannerBtn" onclick="startScanner()">📸 Abrir Câmera</button>
-                <button class="btn-outline" id="stopScannerBtn" onclick="stopScanner()" style="display:none;">Parar</button>
-                <div id="scanResult" style="margin-top: 0.8rem; font-weight: 500;"></div>
-            </div>
+            <div id="reader" style="width:100%;"></div>
+            <button class="btn-primary" id="startScannerBtn" onclick="startScanner()">📸 Abrir Câmera</button>
+            <button class="btn-outline" id="stopScannerBtn" onclick="stopScanner()" style="display:none;">Parar</button>
+            <div id="scanResult" style="margin-top: 0.8rem; font-weight: 500;"></div>
         </div>
         <div class="card">
-            <h3>✔️ Crianças presentes agora</h3>
+            <div class="tabs" id="tabsContainer">
+                <div class="tab active" data-room="todos">👶 Todos</div>
+                <div class="tab" data-room="Kids">🍼 Kids</div>
+                <div class="tab" data-room="Babys">🧸 Babys</div>
+                <div class="tab" data-room="Juvenis">⚡ Juvenis</div>
+            </div>
             <div id="presentList">Carregando...</div>
         </div>
     </div>
@@ -120,19 +114,37 @@
         </div>
     </div>
 
-    <!-- Área para impressão do relatório (geração PDF) -->
-    <div id="reportPrintArea" style="display: none;"></div>
+    <!-- Modal detalhes da criança (olhinho) -->
+    <div id="childDetailsModal" class="modal">
+        <div class="modal-content" id="childDetailsContent"></div>
+    </div>
+
+    <!-- Modal para mover crianças para sala (ao clicar na aba diferente de "todos") -->
+    <div id="roomModal" class="modal">
+        <div class="modal-content">
+            <h3 id="roomModalTitle">Mover para sala</h3>
+            <div id="roomChildrenList" class="room-list"></div>
+            <button class="btn-primary" onclick="saveRoomAssignments()">Salvar</button>
+            <button class="btn-outline" onclick="closeRoomModal()">Cancelar</button>
+        </div>
+    </div>
+
     <div id="printArea" style="display: none;"></div>
+    <div id="reportPrintArea" style="display: none;"></div>
 
     <script>
         let currentStaffId = null, currentSessionId = null, html5QrCode = null, scannerActive = false;
         let autoRestartScanner = null;
+        let currentRoomFilter = 'todos';
+        let pendingRoom = null;
+        let childrenForRoom = []; // lista de {checkinId, childId, name, photo, birth_date}
 
         async function init() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = 'index.html'; return; }
             currentStaffId = user.id;
             await loadSessions();
+            setupTabs();
         }
 
         async function loadSessions() {
@@ -154,6 +166,111 @@
             await loadPresentList();
         }
 
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', async () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentRoomFilter = tab.dataset.room;
+                    if (currentRoomFilter === 'todos') {
+                        await loadPresentList();
+                    } else {
+                        // Abre modal para selecionar crianças para esta sala
+                        openRoomModal(currentRoomFilter);
+                    }
+                });
+            });
+        }
+
+        async function openRoomModal(roomName) {
+            pendingRoom = roomName;
+            // Buscar todas as crianças presentes (check-ins ativos)
+            const { data: checkins } = await supabaseClient
+                .from('kids_check_ins')
+                .select('id, child_id, child:child_id(id, name, birth_date, photo_url)')
+                .eq('session_id', currentSessionId)
+                .is('checked_out_at', null);
+
+            if (!checkins?.length) {
+                alert('Não há crianças presentes no momento.');
+                return;
+            }
+
+            // Buscar rooms já atribuídas para estas crianças nesta sessão
+            const { data: assigned } = await supabaseClient
+                .from('kids_check_ins')
+                .select('id, room')
+                .eq('session_id', currentSessionId)
+                .in('id', checkins.map(c => c.id));
+
+            const roomMap = new Map();
+            assigned?.forEach(a => roomMap.set(a.id, a.room));
+
+            childrenForRoom = checkins.map(c => ({
+                checkinId: c.id,
+                childId: c.child_id,
+                name: c.child.name,
+                photo: c.child.photo_url,
+                birth_date: c.child.birth_date,
+                currentRoom: roomMap.get(c.id) || 'todos'
+            }));
+
+            const modalTitle = document.getElementById('roomModalTitle');
+            modalTitle.innerText = `Mover crianças para sala: ${roomName}`;
+            const container = document.getElementById('roomChildrenList');
+            container.innerHTML = childrenForRoom.map(child => `
+                <div class="room-item">
+                    ${child.photo ? `<img src="${child.photo}" onerror="this.src='https://via.placeholder.com/40'">` : '<div style="width:40px;height:40px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;">👶</div>'}
+                    <label>
+                        <input type="checkbox" class="room-checkbox" data-checkin-id="${child.checkinId}" ${child.currentRoom === pendingRoom ? 'checked' : ''}>
+                        ${escapeHtml(child.name)} ${child.birth_date ? `(${calculateAge(child.birth_date)} anos)` : ''}
+                    </label>
+                </div>
+            `).join('');
+            document.getElementById('roomModal').style.display = 'flex';
+        }
+
+        function calculateAge(birthDateStr) {
+            const birth = new Date(birthDateStr);
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+            return age;
+        }
+
+        async function saveRoomAssignments() {
+            const checkboxes = document.querySelectorAll('.room-checkbox');
+            const updates = [];
+            for (const cb of checkboxes) {
+                const checkinId = cb.dataset.checkinId;
+                const shouldAssign = cb.checked;
+                if (shouldAssign) {
+                    updates.push({ id: checkinId, room: pendingRoom });
+                } else {
+                    // Se não estiver marcado e atualmente está na sala, volta para 'todos'
+                    const child = childrenForRoom.find(c => c.checkinId == checkinId);
+                    if (child && child.currentRoom === pendingRoom) {
+                        updates.push({ id: checkinId, room: 'todos' });
+                    }
+                }
+            }
+            for (const upd of updates) {
+                await supabaseClient.from('kids_check_ins').update({ room: upd.room }).eq('id', upd.id);
+            }
+            closeRoomModal();
+            await loadPresentList(); // recarrega a lista (a aba "Todos" mostrará todos)
+            // Voltar para aba "Todos"
+            document.querySelector('.tab[data-room="todos"]').click();
+        }
+
+        function closeRoomModal() {
+            document.getElementById('roomModal').style.display = 'none';
+            pendingRoom = null;
+        }
+
+        // Scanner
         async function startScanner() {
             if (scannerActive) return;
             html5QrCode = new Html5Qrcode("reader");
@@ -183,7 +300,6 @@
 
         function onScanError(err) { console.log(err); }
 
-        // Lógica principal: check-in/checkout baseado na existência de check-in ativo
         async function processToken(token) {
             const { data: tokenData, error: tokenError } = await supabaseClient
                 .from('kids_temporary_tokens')
@@ -205,7 +321,6 @@
             const childName = tokenData.child?.name || 'Criança';
             const allergies = tokenData.child?.allergies || '';
 
-            // Verificar se já existe check-in ativo
             const { data: activeCheckin, error: checkError } = await supabaseClient
                 .from('kids_check_ins')
                 .select('id')
@@ -219,37 +334,31 @@
                 return;
             }
 
-            // Se existe, FAZ CHECKOUT e invalida o QR
+            // CHECKOUT
             if (activeCheckin) {
-                const { error: updateError } = await supabaseClient
+                await supabaseClient
                     .from('kids_check_ins')
                     .update({ checked_out_at: new Date().toISOString() })
                     .eq('id', activeCheckin.id);
-
-                if (updateError) {
-                    document.getElementById('scanResult').innerHTML = '❌ Erro no check-out.';
-                    return;
-                }
-
-                // INVALIDAR O QR CODE: setar expires_at para agora
+                // INVALIDAR QR
                 await supabaseClient
                     .from('kids_temporary_tokens')
                     .update({ expires_at: new Date().toISOString() })
                     .eq('id', tokenData.id);
-
                 document.getElementById('scanResult').innerHTML = `✅ Check-out: ${childName} (QR invalidado)`;
                 await loadPresentList();
                 return;
             }
 
-            // Caso contrário, FAZ CHECK-IN
+            // CHECK-IN
             const { data: newCheckin, error: insertError } = await supabaseClient
                 .from('kids_check_ins')
                 .insert({
                     child_id: childId,
                     session_id: currentSessionId,
                     checked_in_by: currentStaffId,
-                    token_id: tokenData.id
+                    token_id: tokenData.id,
+                    room: 'todos'  // padrão
                 })
                 .select()
                 .single();
@@ -261,7 +370,6 @@
 
             document.getElementById('scanResult').innerHTML = `✅ Check-in: ${childName}`;
             await loadPresentList();
-
             if (confirm(`Imprimir etiqueta para ${childName}?`)) {
                 printLabel(token, childName, allergies, newCheckin.id);
             }
@@ -272,7 +380,6 @@
             const now = new Date().toLocaleString();
             const tempDiv = document.createElement('div');
             new QRCode(tempDiv, { text: qrToken, width: 120, height: 120 });
-
             setTimeout(() => {
                 let qrSrc = '';
                 const img = tempDiv.querySelector('img');
@@ -308,7 +415,6 @@
                 .select('*, child:child_id(name, allergies), token:token_id(token)')
                 .eq('id', checkinId)
                 .single();
-
             if (error || !checkin || !checkin.token) {
                 alert('Token não encontrado para impressão.');
                 return;
@@ -316,13 +422,62 @@
             printLabel(checkin.token.token, checkin.child.name, checkin.child.allergies || '', checkinId);
         }
 
+        async function showChildDetails(childId) {
+            // Buscar dados da criança e da família
+            const { data: child, error } = await supabaseClient
+                .from('kids_children')
+                .select('*, family:family_id(*)')
+                .eq('id', childId)
+                .single();
+            if (error || !child) {
+                alert('Erro ao carregar detalhes.');
+                return;
+            }
+            const family = child.family || {};
+            const html = `
+                <div style="text-align:center;">
+                    ${child.photo_url ? `<img src="${child.photo_url}" style="width:100px; height:100px; border-radius:50%; object-fit:cover;">` : '<div style="width:100px;height:100px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;">👶</div>'}
+                    <h3>${escapeHtml(child.name)}</h3>
+                    <p><strong>Nascimento:</strong> ${child.birth_date ? new Date(child.birth_date).toLocaleDateString() : 'Não informado'}</p>
+                    <p><strong>Alergias:</strong> ${escapeHtml(child.allergies) || 'Nenhuma'}</p>
+                    <p><strong>Necessidades especiais:</strong> ${escapeHtml(child.special_needs) || 'Nenhuma'}</p>
+                    <hr>
+                    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                        <div style="text-align:center;">
+                            ${family.father_photo ? `<img src="${family.father_photo}" style="width:60px;height:60px;border-radius:50%;">` : '<div style="width:60px;height:60px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;">👨</div>'}
+                            <div><strong>Pai:</strong> ${escapeHtml(family.father_name) || 'Não informado'}</div>
+                            <div>📞 ${escapeHtml(family.father_phone) || ''}</div>
+                        </div>
+                        <div style="text-align:center;">
+                            ${family.mother_photo ? `<img src="${family.mother_photo}" style="width:60px;height:60px;border-radius:50%;">` : '<div style="width:60px;height:60px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;">👩</div>'}
+                            <div><strong>Mãe:</strong> ${escapeHtml(family.mother_name) || 'Não informado'}</div>
+                            <div>📞 ${escapeHtml(family.mother_phone) || ''}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const modalContent = document.getElementById('childDetailsContent');
+            modalContent.innerHTML = html;
+            document.getElementById('childDetailsModal').style.display = 'flex';
+        }
+
+        function closeChildDetailsModal() {
+            document.getElementById('childDetailsModal').style.display = 'none';
+        }
+
         async function loadPresentList() {
             if (!currentSessionId) return;
-            const { data: checkins } = await supabaseClient
+            // Buscar check-ins ativos da sessão atual
+            let query = supabaseClient
                 .from('kids_check_ins')
-                .select('*, child:child_id(id, name, allergies, birth_date)')
+                .select('*, child:child_id(id, name, allergies, birth_date, photo_url)')
                 .eq('session_id', currentSessionId)
                 .is('checked_out_at', null);
+
+            if (currentRoomFilter !== 'todos') {
+                query = query.eq('room', currentRoomFilter);
+            }
+            const { data: checkins } = await query;
 
             const { data: visitants } = await supabaseClient
                 .from('kids_visitants')
@@ -333,7 +488,7 @@
             if (checkins?.length) {
                 html += `<h4>👶 Crianças cadastradas</h4>`;
                 for (const c of checkins) {
-                    // Verifica se é aniversariante da semana
+                    // aniversariante da semana?
                     let isBirthdayWeek = false;
                     if (c.child.birth_date) {
                         const birth = new Date(c.child.birth_date);
@@ -346,9 +501,14 @@
                     const birthdayIcon = isBirthdayWeek ? '🎂 ' : '';
                     html += `
                         <div class="present-item">
-                            <div><strong>${birthdayIcon}${escapeHtml(c.child.name)}</strong> ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}<br><small>${new Date(c.checked_in_at).toLocaleTimeString()}</small></div>
                             <div>
-                                <button class="btn-print" onclick="reprintLabelFromList('${c.id}')">🖨️ Etiqueta</button>
+                                <strong>${birthdayIcon}${escapeHtml(c.child.name)}</strong>
+                                ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}
+                                <br><small>${new Date(c.checked_in_at).toLocaleTimeString()}</small>
+                            </div>
+                            <div>
+                                <button class="btn-eye" onclick="showChildDetails('${c.child_id}')">👁️</button>
+                                <button class="btn-print" onclick="reprintLabelFromList('${c.id}')">🖨️</button>
                                 <button class="btn-checkout" onclick="checkoutManual('${c.id}')">Check-out</button>
                             </div>
                         </div>
@@ -370,7 +530,6 @@
 
         async function checkoutManual(checkinId) {
             await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
-            // Invalidar token associado
             const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkinId).single();
             if (token) await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', token.id);
             await loadPresentList();
@@ -424,41 +583,24 @@
         function openVisitanteModal() { document.getElementById('visitanteModal').style.display = 'flex'; }
         function closeModal() { document.getElementById('visitanteModal').style.display = 'none'; }
 
-        // ========== RELATÓRIO PROFISSIONAL EM PDF ==========
+        // RELATÓRIO PDF
         async function gerarRelatorio() {
-            if (!currentSessionId) {
-                alert('Selecione uma sessão primeiro.');
-                return;
-            }
-
-            // Buscar dados da sessão
-            const { data: sessionData } = await supabaseClient
-                .from('kids_sessions')
-                .select('name, session_date')
-                .eq('id', currentSessionId)
-                .single();
-
-            // Buscar check-ins ativos e já finalizados da sessão
+            if (!currentSessionId) { alert('Selecione uma sessão primeiro.'); return; }
+            const { data: sessionData } = await supabaseClient.from('kids_sessions').select('name, session_date').eq('id', currentSessionId).single();
             const { data: checkins } = await supabaseClient
                 .from('kids_check_ins')
                 .select('*, child:child_id(id, name, birth_date, allergies)')
                 .eq('session_id', currentSessionId);
-
             const totalCriancas = checkins?.length || 0;
             const presentesAgora = checkins?.filter(c => !c.checked_out_at).length || 0;
-            
-            // Aniversariantes da semana
             const hoje = new Date();
-            const semanaFim = new Date(hoje);
-            semanaFim.setDate(hoje.getDate() + 7);
+            const semanaFim = new Date(hoje); semanaFim.setDate(hoje.getDate() + 7);
             const aniversariantes = (checkins || []).filter(c => {
                 if (!c.child.birth_date) return false;
                 const nasc = new Date(c.child.birth_date);
                 const aniversarioEsteAno = new Date(hoje.getFullYear(), nasc.getMonth(), nasc.getDate());
                 return aniversarioEsteAno >= hoje && aniversarioEsteAno <= semanaFim;
             }).map(c => c.child.name);
-
-            // Montar HTML do relatório
             const reportHtml = `
                 <div class="report-container" id="reportContent">
                     <div class="report-header">
@@ -472,70 +614,32 @@
                         <div class="stat-card"><div class="stat-number">${aniversariantes.length}</div><div class="stat-label">Aniversariantes da semana</div></div>
                     </div>
                     <h3>📋 Lista de crianças</h3>
-                    <table>
-                        <thead><tr><th>Nome</th><th>Idade</th><th>Alergias</th><th>Check-in</th><th>Check-out</th></tr></thead>
-                        <tbody>
-                            ${(checkins || []).map(c => {
-                                let idade = '';
-                                if (c.child.birth_date) {
-                                    const nasc = new Date(c.child.birth_date);
-                                    let age = hoje.getFullYear() - nasc.getFullYear();
-                                    const m = hoje.getMonth() - nasc.getMonth();
-                                    if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) age--;
-                                    idade = `${age} anos`;
-                                }
-                                const isBirthday = aniversariantes.includes(c.child.name);
-                                return `
-                                    <tr class="${isBirthday ? 'birthday' : ''}">
-                                        <td>${escapeHtml(c.child.name)} ${isBirthday ? '🎂' : ''}</td>
-                                        <td>${idade}</td>
-                                        <td>${escapeHtml(c.child.allergies || '-')}</td>
-                                        <td>${new Date(c.checked_in_at).toLocaleString()}</td>
-                                        <td>${c.checked_out_at ? new Date(c.checked_out_at).toLocaleString() : 'Ainda presente'}</td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
+                    <table><thead><tr><th>Nome</th><th>Idade</th><th>Alergias</th><th>Check-in</th><th>Check-out</th></tr></thead><tbody>
+                        ${(checkins || []).map(c => {
+                            let idade = '';
+                            if (c.child.birth_date) {
+                                const nasc = new Date(c.child.birth_date);
+                                let age = hoje.getFullYear() - nasc.getFullYear();
+                                const m = hoje.getMonth() - nasc.getMonth();
+                                if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) age--;
+                                idade = `${age} anos`;
+                            }
+                            const isBirthday = aniversariantes.includes(c.child.name);
+                            return `<tr class="${isBirthday ? 'birthday' : ''}"><td>${escapeHtml(c.child.name)} ${isBirthday ? '🎂' : ''}</td><td>${idade}</td><td>${escapeHtml(c.child.allergies || '-')}</td><td>${new Date(c.checked_in_at).toLocaleString()}</td><td>${c.checked_out_at ? new Date(c.checked_out_at).toLocaleString() : 'Ainda presente'}</td></tr>`;
+                        }).join('')}
+                    </tbody></table>
                     <p><em>Relatório gerado em ${new Date().toLocaleString()}</em></p>
                 </div>
             `;
-
-            // Exibir área oculta e gerar PDF
             const printDiv = document.getElementById('reportPrintArea');
             printDiv.innerHTML = reportHtml;
             printDiv.style.display = 'block';
-            // Usar html2pdf para gerar PDF
             const element = document.getElementById('reportContent');
-            html2pdf().from(element).set({
-                margin: [0.5, 0.5, 0.5, 0.5],
-                filename: `relatorio_${sessionData?.name || 'sessao'}.pdf`,
-                html2canvas: { scale: 2, letterRendering: true },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-            }).save().then(() => {
-                printDiv.style.display = 'none';
-            }).catch(err => {
-                console.error('Erro ao gerar PDF:', err);
-                alert('Erro ao gerar PDF. Tente novamente.');
-                printDiv.style.display = 'none';
-            });
+            html2pdf().from(element).set({ margin: [0.5,0.5,0.5,0.5], filename: `relatorio_${sessionData?.name || 'sessao'}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } }).save().then(() => { printDiv.style.display = 'none'; }).catch(err => { alert('Erro ao gerar PDF'); printDiv.style.display = 'none'; });
         }
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-        }
-
-        async function logout() {
-            await supabaseClient.auth.signOut();
-            window.location.href = 'index.html';
-        }
-
+        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : (m === '<' ? '&lt;' : '&gt;')); }
+        async function logout() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
         init();
     </script>
 </body>
