@@ -928,36 +928,53 @@
             }
         }
 
-        // ==================== ÚLTIMO REGISTRO ====================
-        async function loadLastRegister() {
-            if (!currentFamilyId) return;
-            const { data: children } = await supabaseClient
-                .from('kids_children')
-                .select('id')
-                .eq('family_id', currentFamilyId);
-            if (!children?.length) {
-                document.getElementById('lastRegisterInfo').innerHTML = '<p>Nenhum check-in registrado ainda.</p>';
-                return;
-            }
-            const childIds = children.map(c => c.id);
-            const { data: lastCheckin } = await supabaseClient
-                .from('kids_check_ins')
-                .select('*, child:child_id(name), session:session_id(name, session_date)')
-                .in('child_id', childIds)
-                .order('checked_in_at', { ascending: false })
-                .limit(1);
-            if (lastCheckin && lastCheckin.length > 0) {
-                const ci = lastCheckin[0];
-                const status = ci.checked_out_at ? `Saída: ${new Date(ci.checked_out_at).toLocaleString()}` : 'ATIVO (ainda presente)';
-                document.getElementById('lastRegisterInfo').innerHTML = `
+        
+       // ==================== ÚLTIMOS REGISTROS (lista dos últimos check-ins de todos os filhos) ====================
+async function loadLastRegister() {
+    if (!currentFamilyId) return;
+    const { data: children } = await supabaseClient
+        .from('kids_children')
+        .select('id, name')
+        .eq('family_id', currentFamilyId);
+    if (!children?.length) {
+        document.getElementById('lastRegisterInfo').innerHTML = '<p>Nenhum check-in registrado ainda.</p>';
+        return;
+    }
+    const childIds = children.map(c => c.id);
+    // Buscar os últimos 10 check-ins (ou ajuste o limite conforme desejar)
+    const { data: recentCheckins, error } = await supabaseClient
+        .from('kids_check_ins')
+        .select('*, child:child_id(name), session:session_id(name, session_date)')
+        .in('child_id', childIds)
+        .order('checked_in_at', { ascending: false })
+        .limit(10);
+    
+    if (error) {
+        console.error(error);
+        document.getElementById('lastRegisterInfo').innerHTML = '<p>Erro ao carregar últimos registros.</p>';
+        return;
+    }
+    
+    if (recentCheckins && recentCheckins.length > 0) {
+        let html = '<ul style="list-style: none; padding: 0; margin: 0;">';
+        for (const ci of recentCheckins) {
+            const status = ci.checked_out_at 
+                ? `<span style="color: #059669;">✓ Saída: ${new Date(ci.checked_out_at).toLocaleTimeString()}</span>`
+                : `<span style="color: #2563eb; font-weight: 500;">● ATIVO (ainda presente)</span>`;
+            html += `
+                <li style="border-bottom: 1px solid #eef2ff; padding: 0.6rem 0;">
                     <div><strong>${escapeHtml(ci.child.name)}</strong> - ${ci.session.name}</div>
-                    <div>Check-in: ${new Date(ci.checked_in_at).toLocaleString()}</div>
-                    <div>${status}</div>
-                `;
-            } else {
-                document.getElementById('lastRegisterInfo').innerHTML = '<p>Nenhum check-in registrado ainda.</p>';
-            }
+                    <div style="font-size: 0.8rem; color: #475569;">Check-in: ${new Date(ci.checked_in_at).toLocaleString()}</div>
+                    <div style="font-size: 0.8rem;">${status}</div>
+                </li>
+            `;
         }
+        html += '</ul>';
+        document.getElementById('lastRegisterInfo').innerHTML = html;
+    } else {
+        document.getElementById('lastRegisterInfo').innerHTML = '<p>Nenhum check-in registrado ainda.</p>';
+    }
+}
 
         // ==================== HISTÓRICO COMPLETO (MODAL) ====================
         async function openHistoryModal() {
