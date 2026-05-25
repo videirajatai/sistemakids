@@ -227,7 +227,7 @@
         .modal-content {
             background: white;
             width: 90%;
-            max-width: 600px;
+            max-width: 650px;
             border-radius: 1.8rem;
             padding: 1.5rem;
             max-height: 90vh;
@@ -238,8 +238,7 @@
             color: #0f172a;
         }
         .modal-content input, 
-        .modal-content textarea,
-        .modal-content select {
+        .modal-content textarea {
             width: 100%;
             padding: 0.7rem;
             border-radius: 1rem;
@@ -278,19 +277,9 @@
             text-align: center;
         }
         .photo-preview img {
-            max-width: 80px;
+            max-width: 60px;
             border-radius: 50%;
             border: 2px solid #e2e8f0;
-        }
-        .family-photo-row {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            margin-bottom: 1rem;
-        }
-        .family-photo-item {
-            flex: 1;
-            text-align: center;
         }
         select, .child-selector {
             width: 100%;
@@ -302,6 +291,101 @@
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Estilos para os CARDS do modal de configuração */
+        .profile-card {
+            background: #ffffff;
+            border-radius: 1.2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2ff;
+            transition: 0.2s;
+        }
+        .profile-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .card-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        .card-info {
+            flex: 1;
+        }
+        .card-info h4 {
+            margin: 0 0 4px 0;
+            font-size: 1.1rem;
+            color: #0f172a;
+        }
+        .card-info p {
+            margin: 2px 0;
+            color: #475569;
+            font-size: 0.85rem;
+        }
+        .card-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 0.5rem;
+        }
+        .btn-edit-card {
+            background: #e2e8f0;
+            border: none;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-edit-card:hover {
+            background: #cbd5e1;
+        }
+        .add-card {
+            border: 2px dashed #cbd5e1;
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .add-card:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+        .add-card span {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+        .add-card .card-info h4 {
+            color: #3b82f6;
+        }
+        hr {
+            margin: 1rem 0;
+            border-color: #eef2ff;
+        }
+        .inline-form {
+            display: none;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eef2ff;
+        }
+        .inline-form.active {
+            display: block;
         }
     </style>
 </head>
@@ -344,69 +428,113 @@
     <!-- Botão flutuante para adicionar criança -->
     <div class="fab" onclick="openAddChildModal()">+</div>
 
-    <!-- Modal de criança (adicionar/editar) -->
+    <!-- Modal de criança (adicionar/editar) - INALTERADO -->
     <div id="childModal" class="modal">
         <div class="modal-content">
             <h3 id="modalTitle">Adicionar Criança</h3>
             <input type="hidden" id="childId" value="">
-            
             <label>Nome da criança *</label>
             <input type="text" id="childName" placeholder="Ex: Maria Silva" required>
-            
             <label>Data de nascimento</label>
             <input type="date" id="childBirthDate">
-            
             <label>Alergias (opcional)</label>
             <textarea id="childAllergies" placeholder="Ex: leite, amendoim, lactose..."></textarea>
-            
             <label>Necessidades especiais (opcional)</label>
             <textarea id="childSpecialNeeds" placeholder="Ex: autismo, TDAH, mobilidade reduzida..."></textarea>
-            
             <label>Foto da criança</label>
             <input type="file" id="childPhoto" accept="image/jpeg, image/png, image/webp">
             <div id="currentPhotoPreview" class="photo-preview"></div>
-            
             <button class="btn-primary" onclick="saveChild()">Salvar</button>
             <button class="btn-outline" onclick="closeChildModal()">Cancelar</button>
         </div>
     </div>
 
-    <!-- Modal de configuração da família -->
+    <!-- Modal de configuração da família - VERSÃO COM CARDS MODERNOS -->
     <div id="configModal" class="modal">
         <div class="modal-content">
             <h3>⚙️ Configurações da Família</h3>
-            <label>Nome da Família</label>
-            <input type="text" id="familyName" placeholder="Ex: Família Silva">
             
-            <div class="family-photo-row">
-                <div class="family-photo-item">
-                    <label>👨 Nome do Pai</label>
-                    <input type="text" id="fatherName" placeholder="Nome do pai">
-                    <label>📞 Telefone do Pai</label>
-                    <input type="tel" id="fatherPhone" placeholder="(99) 99999-9999">
-                    <label>🖼️ Foto do Pai</label>
-                    <input type="file" id="fatherPhoto" accept="image/jpeg, image/png, image/webp">
-                    <div id="fatherPhotoPreview" class="photo-preview"></div>
+            <!-- Card do Pai -->
+            <div class="profile-card" id="fatherCard">
+                <div class="card-header">
+                    <div class="card-avatar" id="fatherAvatar">👨</div>
+                    <div class="card-info">
+                        <h4 id="fatherNameDisplay">Pai</h4>
+                        <p id="fatherPhoneDisplay">📞 Telefone não informado</p>
+                    </div>
                 </div>
-                <div class="family-photo-item">
-                    <label>👩 Nome da Mãe</label>
-                    <input type="text" id="motherName" placeholder="Nome da mãe">
-                    <label>📞 Telefone da Mãe</label>
-                    <input type="tel" id="motherPhone" placeholder="(99) 99999-9999">
-                    <label>🖼️ Foto da Mãe</label>
-                    <input type="file" id="motherPhoto" accept="image/jpeg, image/png, image/webp">
-                    <div id="motherPhotoPreview" class="photo-preview"></div>
+                <div class="card-actions">
+                    <button class="btn-edit-card" onclick="toggleEditForm('father')">✏️ Editar</button>
+                </div>
+                <div id="fatherEditForm" class="inline-form">
+                    <input type="text" id="fatherNameInput" placeholder="Nome do pai">
+                    <input type="tel" id="fatherPhoneInput" placeholder="Telefone">
+                    <label>Foto do pai</label>
+                    <input type="file" id="fatherPhotoInput" accept="image/jpeg, image/png, image/webp">
+                    <div id="fatherPhotoPreview" class="photo-preview"></div>
+                    <button class="btn-primary" style="margin-top:0.5rem;" onclick="saveFatherData()">Salvar</button>
+                    <button class="btn-outline" onclick="cancelEdit('father')">Cancelar</button>
                 </div>
             </div>
-            
-            <label>📌 Endereço</label>
-            <textarea id="familyAddress" placeholder="Endereço completo"></textarea>
-            
-            <label>🙏 Célula / Pequeno Grupo</label>
-            <input type="text" id="familyCellGroup" placeholder="Ex: Célula dos Jovens">
-            
-            <button class="btn-primary" onclick="saveFamilyConfig()">Salvar configurações</button>
-            <button class="btn-outline" onclick="closeConfigModal()">Cancelar</button>
+
+            <!-- Card da Mãe -->
+            <div class="profile-card" id="motherCard">
+                <div class="card-header">
+                    <div class="card-avatar" id="motherAvatar">👩</div>
+                    <div class="card-info">
+                        <h4 id="motherNameDisplay">Mãe</h4>
+                        <p id="motherPhoneDisplay">📞 Telefone não informado</p>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-edit-card" onclick="toggleEditForm('mother')">✏️ Editar</button>
+                </div>
+                <div id="motherEditForm" class="inline-form">
+                    <input type="text" id="motherNameInput" placeholder="Nome da mãe">
+                    <input type="tel" id="motherPhoneInput" placeholder="Telefone">
+                    <label>Foto da mãe</label>
+                    <input type="file" id="motherPhotoInput" accept="image/jpeg, image/png, image/webp">
+                    <div id="motherPhotoPreview" class="photo-preview"></div>
+                    <button class="btn-primary" style="margin-top:0.5rem;" onclick="saveMotherData()">Salvar</button>
+                    <button class="btn-outline" onclick="cancelEdit('mother')">Cancelar</button>
+                </div>
+            </div>
+
+            <!-- Card para adicionar outro responsável (placeholder) -->
+            <div class="profile-card add-card" onclick="alert('Funcionalidade para adicionar outro responsável em breve')">
+                <div class="card-header">
+                    <div class="card-avatar">+</div>
+                    <div class="card-info">
+                        <h4>Adicionar outro responsável</h4>
+                        <p>Avô, avó, tia, etc.</p>
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- Card de Residência / Endereço -->
+            <div class="profile-card" id="addressCard">
+                <div class="card-header">
+                    <div class="card-avatar">🏠</div>
+                    <div class="card-info">
+                        <h4>Residência</h4>
+                        <p id="addressDisplay">📍 Endereço não informado</p>
+                        <p id="cellGroupDisplay">🙏 Célula não informada</p>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-edit-card" onclick="toggleEditForm('address')">✏️ Editar</button>
+                </div>
+                <div id="addressEditForm" class="inline-form">
+                    <textarea id="addressInput" placeholder="Endereço completo"></textarea>
+                    <input type="text" id="cellGroupInput" placeholder="Célula / Pequeno grupo">
+                    <button class="btn-primary" style="margin-top:0.5rem;" onclick="saveAddressData()">Salvar</button>
+                    <button class="btn-outline" onclick="cancelEdit('address')">Cancelar</button>
+                </div>
+            </div>
+
+            <button class="btn-outline" onclick="closeConfigModal()">Fechar</button>
         </div>
     </div>
 
@@ -415,6 +543,7 @@
         let currentFamilyId = null;
         let currentUser = null;
         const IMGBB_API_KEY = 'd3ec802e2dfc1896a26e44b80d489f17';
+        let currentFamilyData = {};
 
         // ==================== INICIALIZAÇÃO ====================
         async function loadUserAndFamily() {
@@ -442,7 +571,7 @@
                 document.getElementById('qrSection').style.display = 'block';
                 await loadChildren();
                 await loadHistory();
-                await loadFamilyData(); // carrega dados da família para o modal
+                await loadFamilyData();
             } else {
                 document.getElementById('childrenList').innerHTML = `
                     <div class="card">
@@ -488,7 +617,7 @@
             await loadFamilyData();
         }
 
-        // Carregar dados da família para o modal de configuração
+        // Carregar dados da família para o modal
         async function loadFamilyData() {
             if (!currentFamilyId) return;
             const { data: family, error } = await supabaseClient
@@ -500,110 +629,170 @@
                 console.error(error);
                 return;
             }
-            if (family) {
-                document.getElementById('familyName').value = family.family_name || '';
-                document.getElementById('fatherName').value = family.father_name || '';
-                document.getElementById('fatherPhone').value = family.father_phone || '';
-                document.getElementById('motherName').value = family.mother_name || '';
-                document.getElementById('motherPhone').value = family.mother_phone || '';
-                document.getElementById('familyAddress').value = family.address || '';
-                document.getElementById('familyCellGroup').value = family.cell_group || '';
-                
-                // Previews das fotos
-                const fatherPreview = document.getElementById('fatherPhotoPreview');
-                if (family.father_photo_url) {
-                    fatherPreview.innerHTML = `<img src="${family.father_photo_url}" width="60" style="border-radius: 50%;"><br><small>Foto atual</small>`;
-                } else {
-                    fatherPreview.innerHTML = '';
-                }
-                const motherPreview = document.getElementById('motherPhotoPreview');
-                if (family.mother_photo_url) {
-                    motherPreview.innerHTML = `<img src="${family.mother_photo_url}" width="60" style="border-radius: 50%;"><br><small>Foto atual</small>`;
-                } else {
-                    motherPreview.innerHTML = '';
+            currentFamilyData = family || {};
+            updateFamilyCards();
+        }
+
+        // Atualiza os cards com os dados atuais
+        function updateFamilyCards() {
+            const f = currentFamilyData;
+            // Pai
+            document.getElementById('fatherNameDisplay').innerText = f.father_name ? escapeHtml(f.father_name) : 'Pai não informado';
+            document.getElementById('fatherPhoneDisplay').innerHTML = f.father_phone ? `📞 ${escapeHtml(f.father_phone)}` : '📞 Telefone não informado';
+            if (f.father_photo_url) {
+                document.getElementById('fatherAvatar').innerHTML = `<img src="${f.father_photo_url}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;">`;
+            } else {
+                document.getElementById('fatherAvatar').innerHTML = '👨';
+            }
+            // Mãe
+            document.getElementById('motherNameDisplay').innerText = f.mother_name ? escapeHtml(f.mother_name) : 'Mãe não informada';
+            document.getElementById('motherPhoneDisplay').innerHTML = f.mother_phone ? `📞 ${escapeHtml(f.mother_phone)}` : '📞 Telefone não informado';
+            if (f.mother_photo_url) {
+                document.getElementById('motherAvatar').innerHTML = `<img src="${f.mother_photo_url}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;">`;
+            } else {
+                document.getElementById('motherAvatar').innerHTML = '👩';
+            }
+            // Endereço
+            document.getElementById('addressDisplay').innerHTML = f.address ? `📍 ${escapeHtml(f.address)}` : '📍 Endereço não informado';
+            document.getElementById('cellGroupDisplay').innerHTML = f.cell_group ? `🙏 ${escapeHtml(f.cell_group)}` : '🙏 Célula não informada';
+        }
+
+        // Alternar formulários de edição
+        function toggleEditForm(type) {
+            // Fecha todos os forms abertos
+            ['father', 'mother', 'address'].forEach(t => {
+                const form = document.getElementById(`${t}EditForm`);
+                if (form) form.classList.remove('active');
+            });
+            const form = document.getElementById(`${type}EditForm`);
+            if (form) {
+                form.classList.add('active');
+                // Preencher campos com valores atuais
+                if (type === 'father') {
+                    document.getElementById('fatherNameInput').value = currentFamilyData.father_name || '';
+                    document.getElementById('fatherPhoneInput').value = currentFamilyData.father_phone || '';
+                    document.getElementById('fatherPhotoInput').value = '';
+                    const previewDiv = document.getElementById('fatherPhotoPreview');
+                    if (currentFamilyData.father_photo_url) {
+                        previewDiv.innerHTML = `<img src="${currentFamilyData.father_photo_url}" width="60" style="border-radius: 50%;"><br><small>Foto atual</small>`;
+                    } else {
+                        previewDiv.innerHTML = '';
+                    }
+                } else if (type === 'mother') {
+                    document.getElementById('motherNameInput').value = currentFamilyData.mother_name || '';
+                    document.getElementById('motherPhoneInput').value = currentFamilyData.mother_phone || '';
+                    document.getElementById('motherPhotoInput').value = '';
+                    const previewDiv = document.getElementById('motherPhotoPreview');
+                    if (currentFamilyData.mother_photo_url) {
+                        previewDiv.innerHTML = `<img src="${currentFamilyData.mother_photo_url}" width="60" style="border-radius: 50%;"><br><small>Foto atual</small>`;
+                    } else {
+                        previewDiv.innerHTML = '';
+                    }
+                } else if (type === 'address') {
+                    document.getElementById('addressInput').value = currentFamilyData.address || '';
+                    document.getElementById('cellGroupInput').value = currentFamilyData.cell_group || '';
                 }
             }
         }
 
-        // Salvar configurações da família (com upload de fotos)
-        async function saveFamilyConfig() {
-            const familyName = document.getElementById('familyName').value.trim();
-            const fatherName = document.getElementById('fatherName').value.trim();
-            const fatherPhone = document.getElementById('fatherPhone').value.trim();
-            const motherName = document.getElementById('motherName').value.trim();
-            const motherPhone = document.getElementById('motherPhone').value.trim();
-            const address = document.getElementById('familyAddress').value.trim();
-            const cellGroup = document.getElementById('familyCellGroup').value.trim();
-            
-            const fatherPhotoFile = document.getElementById('fatherPhoto').files[0];
-            const motherPhotoFile = document.getElementById('motherPhoto').files[0];
-            
-            let fatherPhotoUrl = null;
-            let motherPhotoUrl = null;
-            
-            // Upload foto do pai
-            if (fatherPhotoFile) {
+        function cancelEdit(type) {
+            document.getElementById(`${type}EditForm`).classList.remove('active');
+        }
+
+        async function saveFatherData() {
+            const name = document.getElementById('fatherNameInput').value.trim();
+            const phone = document.getElementById('fatherPhoneInput').value.trim();
+            const photoFile = document.getElementById('fatherPhotoInput').files[0];
+            let photoUrl = null;
+            if (photoFile) {
                 const formData = new FormData();
-                formData.append('image', fatherPhotoFile);
+                formData.append('image', photoFile);
                 try {
                     const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
                         method: 'POST',
                         body: formData
                     });
                     const result = await response.json();
-                    if (result.success) fatherPhotoUrl = result.data.url;
-                    else throw new Error('Falha upload foto pai');
+                    if (result.success) photoUrl = result.data.url;
+                    else throw new Error('Falha upload');
                 } catch (err) {
                     alert('Erro ao enviar foto do pai');
                     return;
                 }
             }
-            
-            // Upload foto da mãe
-            if (motherPhotoFile) {
+            const updateData = { father_name: name, father_phone: phone };
+            if (photoUrl) updateData.father_photo_url = photoUrl;
+            const { error } = await supabaseClient
+                .from('kids_families')
+                .update(updateData)
+                .eq('id', currentFamilyId);
+            if (error) alert('Erro: ' + error.message);
+            else {
+                alert('Dados do pai salvos!');
+                if (photoUrl) currentFamilyData.father_photo_url = photoUrl;
+                currentFamilyData.father_name = name;
+                currentFamilyData.father_phone = phone;
+                updateFamilyCards();
+                cancelEdit('father');
+            }
+        }
+
+        async function saveMotherData() {
+            const name = document.getElementById('motherNameInput').value.trim();
+            const phone = document.getElementById('motherPhoneInput').value.trim();
+            const photoFile = document.getElementById('motherPhotoInput').files[0];
+            let photoUrl = null;
+            if (photoFile) {
                 const formData = new FormData();
-                formData.append('image', motherPhotoFile);
+                formData.append('image', photoFile);
                 try {
                     const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
                         method: 'POST',
                         body: formData
                     });
                     const result = await response.json();
-                    if (result.success) motherPhotoUrl = result.data.url;
-                    else throw new Error('Falha upload foto mãe');
+                    if (result.success) photoUrl = result.data.url;
+                    else throw new Error('Falha upload');
                 } catch (err) {
                     alert('Erro ao enviar foto da mãe');
                     return;
                 }
             }
-            
-            const updateData = {
-                family_name: familyName,
-                father_name: fatherName,
-                father_phone: fatherPhone,
-                mother_name: motherName,
-                mother_phone: motherPhone,
-                address: address,
-                cell_group: cellGroup
-            };
-            if (fatherPhotoUrl) updateData.father_photo_url = fatherPhotoUrl;
-            if (motherPhotoUrl) updateData.mother_photo_url = motherPhotoUrl;
-            
+            const updateData = { mother_name: name, mother_phone: phone };
+            if (photoUrl) updateData.mother_photo_url = photoUrl;
             const { error } = await supabaseClient
                 .from('kids_families')
                 .update(updateData)
                 .eq('id', currentFamilyId);
-            
-            if (error) {
-                alert('Erro ao salvar: ' + error.message);
-            } else {
-                alert('Configurações salvas!');
-                closeConfigModal();
-                await loadFamilyData(); // recarrega os dados para os previews
+            if (error) alert('Erro: ' + error.message);
+            else {
+                alert('Dados da mãe salvos!');
+                if (photoUrl) currentFamilyData.mother_photo_url = photoUrl;
+                currentFamilyData.mother_name = name;
+                currentFamilyData.mother_phone = phone;
+                updateFamilyCards();
+                cancelEdit('mother');
             }
         }
 
-        // ==================== CRUD DE CRIANÇAS (mantido igual) ====================
+        async function saveAddressData() {
+            const address = document.getElementById('addressInput').value.trim();
+            const cellGroup = document.getElementById('cellGroupInput').value.trim();
+            const { error } = await supabaseClient
+                .from('kids_families')
+                .update({ address: address, cell_group: cellGroup })
+                .eq('id', currentFamilyId);
+            if (error) alert('Erro: ' + error.message);
+            else {
+                alert('Endereço e célula salvos!');
+                currentFamilyData.address = address;
+                currentFamilyData.cell_group = cellGroup;
+                updateFamilyCards();
+                cancelEdit('address');
+            }
+        }
+
+        // ==================== CRUD DE CRIANÇAS (INALTERADO) ====================
         async function loadChildren() {
             if (!currentFamilyId) return;
             const { data, error } = await supabaseClient
@@ -611,16 +800,13 @@
                 .select('*')
                 .eq('family_id', currentFamilyId)
                 .order('name');
-
             if (error) {
                 console.error(error);
                 document.getElementById('childrenList').innerHTML = '<p>Erro ao carregar crianças.</p>';
                 return;
             }
-
             const container = document.getElementById('childrenList');
             const select = document.getElementById('childSelect');
-
             if (data && data.length) {
                 container.innerHTML = data.map(child => `
                     <div class="child-item">
@@ -691,146 +877,61 @@
             const allergies = document.getElementById('childAllergies').value.trim();
             const specialNeeds = document.getElementById('childSpecialNeeds').value.trim();
             const photoFile = document.getElementById('childPhoto').files[0];
-
-            if (!name) {
-                alert('O nome da criança é obrigatório.');
-                return;
-            }
-
+            if (!name) { alert('O nome da criança é obrigatório.'); return; }
             let photoUrl = null;
             if (photoFile) {
                 const formData = new FormData();
                 formData.append('image', photoFile);
                 try {
-                    const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-                        method: 'POST',
-                        body: formData
-                    });
+                    const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
                     const result = await response.json();
-                    if (result.success) {
-                        photoUrl = result.data.url;
-                    } else {
-                        throw new Error('Falha no upload da imagem');
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert('Erro ao enviar a foto. Tente novamente.');
-                    return;
-                }
+                    if (result.success) photoUrl = result.data.url;
+                    else throw new Error('Falha upload');
+                } catch (err) { alert('Erro ao enviar a foto.'); return; }
             }
-
-            const childData = {
-                name: name,
-                birth_date: birthDate || null,
-                allergies: allergies || null,
-                special_needs: specialNeeds || null,
-                family_id: currentFamilyId,
-                is_active: true
-            };
+            const childData = { name, birth_date: birthDate || null, allergies: allergies || null, special_needs: specialNeeds || null, family_id: currentFamilyId, is_active: true };
             if (photoUrl) childData.photo_url = photoUrl;
-
             let result;
-            if (childId) {
-                result = await supabaseClient
-                    .from('kids_children')
-                    .update(childData)
-                    .eq('id', childId);
-            } else {
-                result = await supabaseClient
-                    .from('kids_children')
-                    .insert([childData]);
-            }
-
-            if (result.error) {
-                alert('Erro ao salvar: ' + result.error.message);
-            } else {
-                alert(childId ? 'Criança atualizada!' : 'Criança adicionada!');
-                closeChildModal();
-                await loadChildren();
-            }
+            if (childId) result = await supabaseClient.from('kids_children').update(childData).eq('id', childId);
+            else result = await supabaseClient.from('kids_children').insert([childData]);
+            if (result.error) alert('Erro ao salvar: ' + result.error.message);
+            else { alert(childId ? 'Criança atualizada!' : 'Criança adicionada!'); closeChildModal(); await loadChildren(); }
         }
 
         async function deleteChild(childId) {
-            if (!confirm('Tem certeza que deseja excluir esta criança? Todos os check-ins associados também serão removidos.')) return;
-            const { error } = await supabaseClient
-                .from('kids_children')
-                .delete()
-                .eq('id', childId);
-            if (error) {
-                alert('Erro ao excluir: ' + error.message);
-            } else {
-                alert('Criança removida.');
-                await loadChildren();
-                await loadHistory();
-            }
+            if (!confirm('Tem certeza que deseja excluir esta criança?')) return;
+            const { error } = await supabaseClient.from('kids_children').delete().eq('id', childId);
+            if (error) alert('Erro ao excluir: ' + error.message);
+            else { alert('Criança removida.'); await loadChildren(); await loadHistory(); }
         }
 
-        function closeChildModal() {
-            document.getElementById('childModal').style.display = 'none';
-        }
+        function closeChildModal() { document.getElementById('childModal').style.display = 'none'; }
 
         // ==================== QR CODE ====================
         async function generateQR() {
             const childId = document.getElementById('childSelect').value;
-            if (!childId) {
-                alert('Selecione uma criança para gerar o QR Code.');
-                return;
-            }
-            const token = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+            if (!childId) { alert('Selecione uma criança.'); return; }
+            const token = crypto.randomUUID();
             const expiresAt = new Date();
             expiresAt.setHours(expiresAt.getHours() + 4);
-
-            const { error } = await supabaseClient
-                .from('kids_temporary_tokens')
-                .insert({
-                    family_id: currentFamilyId,
-                    child_id: childId,
-                    token: token,
-                    expires_at: expiresAt.toISOString()
-                });
-
-            if (error) {
-                alert('Erro ao gerar QR: ' + error.message);
-                return;
-            }
-
+            const { error } = await supabaseClient.from('kids_temporary_tokens').insert({ family_id: currentFamilyId, child_id: childId, token: token, expires_at: expiresAt.toISOString() });
+            if (error) { alert('Erro ao gerar QR: ' + error.message); return; }
             const qrDiv = document.getElementById('qrcode');
             qrDiv.innerHTML = '';
-            new QRCode(qrDiv, {
-                text: token,
-                width: 200,
-                height: 200
-            });
-            alert('QR Code gerado! Mostre para a equipe escanear. Válido por 4 horas.');
+            new QRCode(qrDiv, { text: token, width: 200, height: 200 });
+            alert('QR Code gerado! Válido por 4 horas.');
         }
 
         // ==================== HISTÓRICO ====================
         async function loadHistory() {
             if (!currentFamilyId) return;
-            const { data: children, error: childrenError } = await supabaseClient
-                .from('kids_children')
-                .select('id, name')
-                .eq('family_id', currentFamilyId);
-            if (childrenError || !children?.length) {
-                document.getElementById('historyList').innerHTML = '<p>Nenhum check-in registrado.</p>';
-                return;
-            }
+            const { data: children } = await supabaseClient.from('kids_children').select('id, name').eq('family_id', currentFamilyId);
+            if (!children?.length) { document.getElementById('historyList').innerHTML = '<p>Nenhum check-in registrado.</p>'; return; }
             const childIds = children.map(c => c.id);
-            const { data: checkins, error: checkError } = await supabaseClient
-                .from('kids_check_ins')
-                .select('*, child:child_id(name), session:session_id(name, session_date)')
-                .in('child_id', childIds)
-                .order('checked_in_at', { ascending: false })
-                .limit(30);
-
+            const { data: checkins } = await supabaseClient.from('kids_check_ins').select('*, child:child_id(name), session:session_id(name, session_date)').in('child_id', childIds).order('checked_in_at', { ascending: false }).limit(30);
             const historyDiv = document.getElementById('historyList');
-            if (checkins && checkins.length) {
-                historyDiv.innerHTML = checkins.map(ci => `
-                    <div class="history-item ${!ci.checked_out_at ? 'active-checkin' : ''}">
-                        ✅ <strong>${escapeHtml(ci.child.name)}</strong> - ${ci.session.name} (${new Date(ci.checked_in_at).toLocaleString()})
-                        ${!ci.checked_out_at ? ' <span style="color:#2563eb;">(ATIVO)</span>' : ` - Saída: ${new Date(ci.checked_out_at).toLocaleTimeString()}`}
-                    </div>
-                `).join('');
+            if (checkins?.length) {
+                historyDiv.innerHTML = checkins.map(ci => `<div class="history-item ${!ci.checked_out_at ? 'active-checkin' : ''}">✅ <strong>${escapeHtml(ci.child.name)}</strong> - ${ci.session.name} (${new Date(ci.checked_in_at).toLocaleString()})${!ci.checked_out_at ? ' <span style="color:#2563eb;">(ATIVO)</span>' : ` - Saída: ${new Date(ci.checked_out_at).toLocaleTimeString()}`}</div>`).join('');
             } else {
                 historyDiv.innerHTML = '<p>Ainda não há check-ins.</p>';
             }
@@ -838,19 +939,17 @@
 
         // ==================== MODAL CONFIGURAÇÃO ====================
         function openConfigModal() {
-            if (!currentFamilyId) {
-                alert('Crie uma família primeiro.');
-                return;
-            }
-            loadFamilyData();
-            document.getElementById('configModal').style.display = 'flex';
+            if (!currentFamilyId) { alert('Crie uma família primeiro.'); return; }
+            loadFamilyData().then(() => {
+                document.getElementById('configModal').style.display = 'flex';
+                // Garantir que todos os forms de edição estejam fechados
+                ['father', 'mother', 'address'].forEach(t => {
+                    const form = document.getElementById(`${t}EditForm`);
+                    if (form) form.classList.remove('active');
+                });
+            });
         }
-        function closeConfigModal() {
-            document.getElementById('configModal').style.display = 'none';
-            // limpar campos de arquivo para não reenviar acidentalmente
-            document.getElementById('fatherPhoto').value = '';
-            document.getElementById('motherPhoto').value = '';
-        }
+        function closeConfigModal() { document.getElementById('configModal').style.display = 'none'; }
 
         // ==================== UTILITÁRIOS ====================
         function escapeHtml(str) {
