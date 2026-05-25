@@ -3,80 +3,495 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Equipe | Kids Checkin</title>
+    <title>Kids Checkin | Equipe</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="app.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background: #edf2f7; padding-bottom: 5rem; }
-        .header { background: #0f172a; color: white; padding: 1rem 1.5rem; border-radius: 0 0 1.8rem 1.8rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
-        .header h2 { font-size: 1.4rem; }
-        .header-buttons { display: flex; gap: 0.8rem; flex-wrap: wrap; }
-        .header-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.4rem 1rem; border-radius: 2rem; cursor: pointer; transition: 0.2s; }
-        .header-btn:hover { background: rgba(255,255,255,0.3); }
-        .container { max-width: 800px; margin: 1.2rem auto; padding: 0 1rem; }
-        .card { background: white; border-radius: 1.5rem; padding: 1.2rem; margin-bottom: 1.2rem; box-shadow: 0 6px 14px rgba(0,0,0,0.05); }
-        .btn-primary { background: #3b82f6; color: white; border: none; padding: 0.6rem 1rem; border-radius: 2rem; cursor: pointer; }
-        .btn-outline { background: transparent; border: 1px solid #3b82f6; color: #3b82f6; padding: 0.6rem 1rem; border-radius: 2rem; cursor: pointer; }
-        .present-item { background: #e6f7e6; padding: 0.8rem; border-radius: 1rem; margin-bottom: 0.6rem; display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; }
-        .visitant-item { background: #fff3e0; border-left: 4px solid #f59e0b; }
-        .btn-checkout { background: #ef4444; color: white; border: none; padding: 0.3rem 1rem; border-radius: 2rem; margin-left: 0.5rem; cursor: pointer; }
-        .btn-print { background: #10b981; border: none; padding: 0.3rem 1rem; border-radius: 2rem; color: white; margin-left: 0.5rem; cursor: pointer; }
-        .btn-eye { background: #3b82f6; border: none; padding: 0.3rem 0.8rem; border-radius: 2rem; color: white; margin-left: 0.5rem; cursor: pointer; font-size: 0.9rem; }
-        .fab-visitante { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #f59e0b; width: 56px; height: 56px; border-radius: 28px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: white; cursor: pointer; border: none; z-index: 100; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 200; }
-        .modal-content { background: white; width: 90%; max-width: 550px; border-radius: 1.8rem; padding: 1.5rem; max-height: 85vh; overflow-y: auto; }
-        input, select { width: 100%; padding: 0.7rem; border-radius: 1rem; margin: 0.4rem 0; border: 1px solid #cbd5e1; }
-        .badge { font-size: 0.7rem; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 2rem; }
-        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
-        .tab { padding: 0.5rem 1rem; border-radius: 2rem; cursor: pointer; background: #f1f5f9; transition: 0.2s; }
-        .tab.active { background: #3b82f6; color: white; }
-        .room-list { max-height: 400px; overflow-y: auto; }
-        .room-item { display: flex; align-items: center; gap: 1rem; padding: 0.5rem; border-bottom: 1px solid #e2e8f0; }
-        .room-item img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-        .room-item label { flex: 1; }
-        .parent-photo { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-right: 1rem; }
-        /* Relatório PDF */
-        .report-container { font-family: 'Segoe UI', sans-serif; padding: 20px; max-width: 1000px; margin: 0 auto; }
-        .report-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
-        .report-header img { max-width: 80px; margin-bottom: 10px; }
-        .report-title { font-size: 24px; font-weight: bold; color: #0f172a; }
-        .stats-grid { display: flex; gap: 20px; justify-content: space-around; margin: 20px 0; flex-wrap: wrap; }
-        .stat-card { background: #f1f5f9; border-radius: 16px; padding: 15px; text-align: center; min-width: 120px; }
-        .stat-number { font-size: 32px; font-weight: bold; color: #3b82f6; }
-        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-        th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
-        th { background: #e2e8f0; }
-        .birthday { background: #fef9c3; }
-        @media print { body * { visibility: hidden; } #reportPrintArea, #reportPrintArea * { visibility: visible; } #reportPrintArea { position: absolute; top: 0; left: 0; width: 100%; } .no-print { display: none; } }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            padding-bottom: 5rem;
+            min-height: 100vh;
+        }
+
+        /* Header moderno */
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 1.2rem 2rem;
+            border-radius: 0 0 2rem 2rem;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .header-left h2 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+        .header-left p {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-top: 0.2rem;
+        }
+        .header-buttons {
+            display: flex;
+            gap: 0.8rem;
+        }
+        .btn-header {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(4px);
+            border: none;
+            color: white;
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            font-weight: 500;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .btn-header:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+
+        /* Container principal */
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        .card:hover {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-left: 4px solid #3b82f6;
+            padding-left: 0.8rem;
+        }
+
+        /* Sessão atual */
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .session-selector {
+            flex: 1;
+            min-width: 200px;
+        }
+        select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        /* Scanner */
+        .scanner-area {
+            text-align: center;
+        }
+        #reader {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            border-radius: 1.2rem;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .scanner-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: scale(1.02);
+        }
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+            padding: 0.6rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            border: none;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+        .scan-result {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 1rem;
+            font-weight: 500;
+            text-align: center;
+            background: #f1f5f9;
+            color: #334155;
+        }
+
+        /* Abas */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+        .tab {
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            background: #f1f5f9;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .tab.active {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+        }
+        .tab:hover:not(.active) {
+            background: #e2e8f0;
+        }
+
+        /* Lista de presentes */
+        .present-item {
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            transition: 0.2s;
+            border-left: 4px solid #10b981;
+        }
+        .present-item:hover {
+            background: #f1f5f9;
+            transform: translateX(4px);
+        }
+        .visitant-item {
+            border-left-color: #f59e0b;
+            background: #fffbeb;
+        }
+        .present-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+        .present-name {
+            font-weight: 600;
+            color: #0f172a;
+            font-size: 1rem;
+        }
+        .present-time {
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+        .present-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .btn-icon {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .btn-icon:hover {
+            background: #f1f5f9;
+            transform: scale(1.02);
+        }
+
+        /* FAB - visitante */
+        .fab-visitante {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: white;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 8px 20px rgba(245,158,11,0.4);
+            transition: all 0.2s;
+            z-index: 100;
+        }
+        .fab-visitante:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 28px rgba(245,158,11,0.5);
+        }
+
+        /* Modais modernos */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 550px;
+            border-radius: 2rem;
+            padding: 1.8rem;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalFadeIn 0.2s ease;
+        }
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1.2rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #94a3b8;
+            transition: 0.2s;
+            background: none;
+            border: none;
+            line-height: 1;
+        }
+        .modal-close:hover {
+            color: #475569;
+        }
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            color: #0f172a;
+            padding-right: 2rem;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            margin: 0.4rem 0 1rem;
+            font-size: 0.9rem;
+            background: #f8fafc;
+            transition: 0.2s;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100%);
+            background: #1e293b;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 3rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        .toast-success { background: #10b981; }
+        .toast-error { background: #ef4444; }
+        .toast-info { background: #3b82f6; }
+
+        /* Room list */
+        .room-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .room-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.8rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .room-item img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        /* Badge */
+        .badge {
+            background: #e2e8f0;
+            padding: 0.2rem 0.5rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        /* Responsivo */
+        @media (max-width: 640px) {
+            .container { padding: 0 1rem; }
+            .header { padding: 1rem; flex-direction: column; text-align: center; }
+            .header-buttons { justify-content: center; }
+            .present-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+            .present-actions { align-self: flex-end; }
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h2>👥 Equipe</h2>
+        <div class="header-left">
+            <h2>👥 Equipe Ministerial</h2>
+            <p>Gestão de crianças, check-in e salas</p>
+        </div>
         <div class="header-buttons">
-            <button class="header-btn" onclick="gerarRelatorio()">📊 Relatórios</button>
-            <button class="header-btn" onclick="logout()">Sair</button>
+            <button class="btn-header" onclick="gerarRelatorio()">📊 Relatório</button>
+            <button class="btn-header" onclick="refreshPresentList()">🔄 Recarregar</button>
+            <button class="btn-header" onclick="logout()">🚪 Sair</button>
         </div>
     </div>
+
     <div class="container">
+        <!-- Sessão atual -->
         <div class="card">
-            <div style="display: flex; justify-content: space-between;">
-                <h3>📅 Sessão atual</h3>
-                <button class="btn-outline" onclick="openSessionModal()">+ Nova Sessão</button>
+            <div class="session-header">
+                <div class="session-selector">
+                    <select id="sessionSelect" onchange="changeSession()"></select>
+                </div>
+                <button class="btn-secondary" onclick="openSessionModal()">➕ Nova Sessão</button>
             </div>
-            <select id="sessionSelect" onchange="changeSession()"></select>
         </div>
+
+        <!-- Scanner QR -->
         <div class="card">
-            <h3>📷 Escanear QR (entrada e saída)</h3>
-            <div id="reader" style="width:100%;"></div>
-            <button class="btn-primary" id="startScannerBtn" onclick="startScanner()">📸 Abrir Câmera</button>
-            <button class="btn-outline" id="stopScannerBtn" onclick="stopScanner()" style="display:none;">Parar</button>
-            <div id="scanResult" style="margin-top: 0.8rem; font-weight: 500;"></div>
+            <div class="card-title">
+                <span>📷</span> Escanear QR
+            </div>
+            <div class="scanner-area">
+                <div id="reader"></div>
+                <div class="scanner-buttons">
+                    <button class="btn-primary" id="startScannerBtn" onclick="startScanner()">📸 Abrir Câmera</button>
+                    <button class="btn-secondary" id="stopScannerBtn" onclick="stopScanner()" style="display:none;">⏹️ Parar</button>
+                </div>
+                <div id="scanResult" class="scan-result"></div>
+            </div>
         </div>
+
+        <!-- Salas e lista de presentes -->
         <div class="card">
             <div class="tabs" id="tabsContainer">
                 <div class="tab active" data-room="todos">👶 Todos</div>
@@ -87,58 +502,79 @@
             <div id="presentList">Carregando...</div>
         </div>
     </div>
+
+    <!-- FAB para visitante -->
     <div class="fab-visitante" onclick="openVisitanteModal()">➕📝</div>
 
     <!-- Modal visitante -->
     <div id="visitanteModal" class="modal">
         <div class="modal-content">
-            <h3>Visitante rápido</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <div class="modal-title">📝 Visitante rápido</div>
             <input type="text" id="visitantName" placeholder="Nome da criança">
             <input type="text" id="respName" placeholder="Responsável">
-            <input type="tel" id="respPhone" placeholder="Telefone">
-            <button class="btn-primary" onclick="registerVisitant()">Registrar</button>
-            <button class="btn-outline" onclick="closeModal()">Cancelar</button>
+            <input type="tel" id="respPhone" placeholder="Telefone (opcional)">
+            <button class="btn-primary" onclick="registerVisitant()" style="width:100%;">Registrar e fazer check-in</button>
         </div>
     </div>
 
     <!-- Modal nova sessão -->
     <div id="sessionModal" class="modal">
         <div class="modal-content">
-            <h3>Nova Sessão</h3>
+            <button class="modal-close" onclick="closeSessionModal()">&times;</button>
+            <div class="modal-title">📅 Nova Sessão</div>
             <input type="text" id="sessionName" placeholder="Nome (ex: Culto Domingo)">
             <input type="date" id="sessionDate">
-            <input type="time" id="sessionStart">
-            <input type="time" id="sessionEnd">
+            <input type="time" id="sessionStart" placeholder="Início">
+            <input type="time" id="sessionEnd" placeholder="Término">
             <button class="btn-primary" onclick="createSession()">Criar</button>
-            <button class="btn-outline" onclick="closeSessionModal()">Cancelar</button>
         </div>
     </div>
 
-    <!-- Modal detalhes da criança (olhinho) -->
+    <!-- Modal detalhes da criança -->
     <div id="childDetailsModal" class="modal">
         <div class="modal-content" id="childDetailsContent"></div>
     </div>
 
-    <!-- Modal para mover crianças para sala (ao clicar na aba diferente de "todos") -->
+    <!-- Modal mover para sala -->
     <div id="roomModal" class="modal">
         <div class="modal-content">
-            <h3 id="roomModalTitle">Mover para sala</h3>
+            <button class="modal-close" onclick="closeRoomModal()">&times;</button>
+            <div class="modal-title" id="roomModalTitle">Mover para sala</div>
             <div id="roomChildrenList" class="room-list"></div>
-            <button class="btn-primary" onclick="saveRoomAssignments()">Salvar</button>
-            <button class="btn-outline" onclick="closeRoomModal()">Cancelar</button>
+            <button class="btn-primary" onclick="saveRoomAssignments()" style="margin-top:1rem;">Salvar</button>
         </div>
     </div>
 
+    <!-- Área para impressão -->
     <div id="printArea" style="display: none;"></div>
     <div id="reportPrintArea" style="display: none;"></div>
 
     <script>
+        // ========== VARIÁVEIS ==========
         let currentStaffId = null, currentSessionId = null, html5QrCode = null, scannerActive = false;
         let autoRestartScanner = null;
         let currentRoomFilter = 'todos';
         let pendingRoom = null;
-        let childrenForRoom = []; // lista de {checkinId, childId, name, photo, birth_date}
+        let childrenForRoom = [];
 
+        // ========== TOAST ==========
+        function showToast(message, type = 'info') {
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) existingToast.remove();
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            document.body.appendChild(toast);
+            toast.offsetHeight;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ========== INICIALIZAÇÃO ==========
         async function init() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = 'index.html'; return; }
@@ -164,6 +600,12 @@
         async function changeSession() {
             currentSessionId = document.getElementById('sessionSelect').value;
             await loadPresentList();
+            showToast('Sessão alterada', 'info');
+        }
+
+        function refreshPresentList() {
+            loadPresentList();
+            showToast('Lista atualizada', 'success');
         }
 
         function setupTabs() {
@@ -176,101 +618,13 @@
                     if (currentRoomFilter === 'todos') {
                         await loadPresentList();
                     } else {
-                        // Abre modal para selecionar crianças para esta sala
                         openRoomModal(currentRoomFilter);
                     }
                 });
             });
         }
 
-        async function openRoomModal(roomName) {
-            pendingRoom = roomName;
-            // Buscar todas as crianças presentes (check-ins ativos)
-            const { data: checkins } = await supabaseClient
-                .from('kids_check_ins')
-                .select('id, child_id, child:child_id(id, name, birth_date, photo_url)')
-                .eq('session_id', currentSessionId)
-                .is('checked_out_at', null);
-
-            if (!checkins?.length) {
-                alert('Não há crianças presentes no momento.');
-                return;
-            }
-
-            // Buscar rooms já atribuídas para estas crianças nesta sessão
-            const { data: assigned } = await supabaseClient
-                .from('kids_check_ins')
-                .select('id, room')
-                .eq('session_id', currentSessionId)
-                .in('id', checkins.map(c => c.id));
-
-            const roomMap = new Map();
-            assigned?.forEach(a => roomMap.set(a.id, a.room));
-
-            childrenForRoom = checkins.map(c => ({
-                checkinId: c.id,
-                childId: c.child_id,
-                name: c.child.name,
-                photo: c.child.photo_url,
-                birth_date: c.child.birth_date,
-                currentRoom: roomMap.get(c.id) || 'todos'
-            }));
-
-            const modalTitle = document.getElementById('roomModalTitle');
-            modalTitle.innerText = `Mover crianças para sala: ${roomName}`;
-            const container = document.getElementById('roomChildrenList');
-            container.innerHTML = childrenForRoom.map(child => `
-                <div class="room-item">
-                    ${child.photo ? `<img src="${child.photo}" onerror="this.src='https://via.placeholder.com/40'">` : '<div style="width:40px;height:40px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;">👶</div>'}
-                    <label>
-                        <input type="checkbox" class="room-checkbox" data-checkin-id="${child.checkinId}" ${child.currentRoom === pendingRoom ? 'checked' : ''}>
-                        ${escapeHtml(child.name)} ${child.birth_date ? `(${calculateAge(child.birth_date)} anos)` : ''}
-                    </label>
-                </div>
-            `).join('');
-            document.getElementById('roomModal').style.display = 'flex';
-        }
-
-        function calculateAge(birthDateStr) {
-            const birth = new Date(birthDateStr);
-            const today = new Date();
-            let age = today.getFullYear() - birth.getFullYear();
-            const m = today.getMonth() - birth.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-            return age;
-        }
-
-        async function saveRoomAssignments() {
-            const checkboxes = document.querySelectorAll('.room-checkbox');
-            const updates = [];
-            for (const cb of checkboxes) {
-                const checkinId = cb.dataset.checkinId;
-                const shouldAssign = cb.checked;
-                if (shouldAssign) {
-                    updates.push({ id: checkinId, room: pendingRoom });
-                } else {
-                    // Se não estiver marcado e atualmente está na sala, volta para 'todos'
-                    const child = childrenForRoom.find(c => c.checkinId == checkinId);
-                    if (child && child.currentRoom === pendingRoom) {
-                        updates.push({ id: checkinId, room: 'todos' });
-                    }
-                }
-            }
-            for (const upd of updates) {
-                await supabaseClient.from('kids_check_ins').update({ room: upd.room }).eq('id', upd.id);
-            }
-            closeRoomModal();
-            await loadPresentList(); // recarrega a lista (a aba "Todos" mostrará todos)
-            // Voltar para aba "Todos"
-            document.querySelector('.tab[data-room="todos"]').click();
-        }
-
-        function closeRoomModal() {
-            document.getElementById('roomModal').style.display = 'none';
-            pendingRoom = null;
-        }
-
-        // Scanner
+        // ========== SCANNER ==========
         async function startScanner() {
             if (scannerActive) return;
             html5QrCode = new Html5Qrcode("reader");
@@ -279,7 +633,8 @@
                 scannerActive = true;
                 document.getElementById('startScannerBtn').style.display = 'none';
                 document.getElementById('stopScannerBtn').style.display = 'inline-block';
-            } catch(e) { alert('Erro ao acessar câmera: '+e); }
+                showToast('Câmera ativada', 'success');
+            } catch(e) { showToast('Erro ao acessar câmera: '+e, 'error'); }
         }
 
         function stopScanner() {
@@ -288,6 +643,7 @@
                 scannerActive = false;
                 document.getElementById('startScannerBtn').style.display = 'inline-block';
                 document.getElementById('stopScannerBtn').style.display = 'none';
+                showToast('Câmera desativada', 'info');
             }
             if (autoRestartScanner) clearTimeout(autoRestartScanner);
         }
@@ -309,11 +665,12 @@
 
             if (tokenError || !tokenData) {
                 document.getElementById('scanResult').innerHTML = '❌ QR inválido.';
+                showToast('QR inválido', 'error');
                 return;
             }
-
             if (new Date(tokenData.expires_at) < new Date()) {
                 document.getElementById('scanResult').innerHTML = '❌ QR expirado.';
+                showToast('QR expirado', 'error');
                 return;
             }
 
@@ -321,7 +678,7 @@
             const childName = tokenData.child?.name || 'Criança';
             const allergies = tokenData.child?.allergies || '';
 
-            const { data: activeCheckin, error: checkError } = await supabaseClient
+            const { data: activeCheckin } = await supabaseClient
                 .from('kids_check_ins')
                 .select('id')
                 .eq('child_id', childId)
@@ -329,23 +686,12 @@
                 .is('checked_out_at', null)
                 .maybeSingle();
 
-            if (checkError) {
-                document.getElementById('scanResult').innerHTML = '❌ Erro ao verificar check-in.';
-                return;
-            }
-
             // CHECKOUT
             if (activeCheckin) {
-                await supabaseClient
-                    .from('kids_check_ins')
-                    .update({ checked_out_at: new Date().toISOString() })
-                    .eq('id', activeCheckin.id);
-                // INVALIDAR QR
-                await supabaseClient
-                    .from('kids_temporary_tokens')
-                    .update({ expires_at: new Date().toISOString() })
-                    .eq('id', tokenData.id);
-                document.getElementById('scanResult').innerHTML = `✅ Check-out: ${childName} (QR invalidado)`;
+                await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', activeCheckin.id);
+                await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', tokenData.id);
+                document.getElementById('scanResult').innerHTML = `✅ Check-out: ${childName}`;
+                showToast(`Check-out: ${childName}`, 'success');
                 await loadPresentList();
                 return;
             }
@@ -358,17 +704,19 @@
                     session_id: currentSessionId,
                     checked_in_by: currentStaffId,
                     token_id: tokenData.id,
-                    room: 'todos'  // padrão
+                    room: 'todos'
                 })
                 .select()
                 .single();
 
             if (insertError) {
-                document.getElementById('scanResult').innerHTML = '❌ Erro no check-in: ' + insertError.message;
+                document.getElementById('scanResult').innerHTML = '❌ Erro no check-in.';
+                showToast('Erro no check-in', 'error');
                 return;
             }
 
             document.getElementById('scanResult').innerHTML = `✅ Check-in: ${childName}`;
+            showToast(`Check-in: ${childName}`, 'success');
             await loadPresentList();
             if (confirm(`Imprimir etiqueta para ${childName}?`)) {
                 printLabel(token, childName, allergies, newCheckin.id);
@@ -416,42 +764,43 @@
                 .eq('id', checkinId)
                 .single();
             if (error || !checkin || !checkin.token) {
-                alert('Token não encontrado para impressão.');
+                showToast('Token não encontrado', 'error');
                 return;
             }
             printLabel(checkin.token.token, checkin.child.name, checkin.child.allergies || '', checkinId);
         }
 
+        // ========== DETALHES DA CRIANÇA ==========
         async function showChildDetails(childId) {
-            // Buscar dados da criança e da família
             const { data: child, error } = await supabaseClient
                 .from('kids_children')
                 .select('*, family:family_id(*)')
                 .eq('id', childId)
                 .single();
             if (error || !child) {
-                alert('Erro ao carregar detalhes.');
+                showToast('Erro ao carregar detalhes', 'error');
                 return;
             }
             const family = child.family || {};
             const html = `
+                <button class="modal-close" onclick="closeChildDetailsModal()">&times;</button>
                 <div style="text-align:center;">
                     ${child.photo_url ? `<img src="${child.photo_url}" style="width:100px; height:100px; border-radius:50%; object-fit:cover;">` : '<div style="width:100px;height:100px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;">👶</div>'}
-                    <h3>${escapeHtml(child.name)}</h3>
-                    <p><strong>Nascimento:</strong> ${child.birth_date ? new Date(child.birth_date).toLocaleDateString() : 'Não informado'}</p>
-                    <p><strong>Alergias:</strong> ${escapeHtml(child.allergies) || 'Nenhuma'}</p>
-                    <p><strong>Necessidades especiais:</strong> ${escapeHtml(child.special_needs) || 'Nenhuma'}</p>
-                    <hr>
+                    <h3 style="margin: 0.5rem 0;">${escapeHtml(child.name)}</h3>
+                    <p><strong>📅 Nascimento:</strong> ${child.birth_date ? new Date(child.birth_date).toLocaleDateString() : 'Não informado'}</p>
+                    <p><strong>⚠️ Alergias:</strong> ${escapeHtml(child.allergies) || 'Nenhuma'}</p>
+                    <p><strong>🔹 Necessidades:</strong> ${escapeHtml(child.special_needs) || 'Nenhuma'}</p>
+                    <hr style="margin:1rem 0;">
                     <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
                         <div style="text-align:center;">
-                            ${family.father_photo ? `<img src="${family.father_photo}" style="width:60px;height:60px;border-radius:50%;">` : '<div style="width:60px;height:60px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;">👨</div>'}
+                            ${family.father_photo_url ? `<img src="${family.father_photo_url}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">` : '<div style="width:60px;height:60px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;">👨</div>'}
                             <div><strong>Pai:</strong> ${escapeHtml(family.father_name) || 'Não informado'}</div>
-                            <div>📞 ${escapeHtml(family.father_phone) || ''}</div>
+                            <div>📞 ${escapeHtml(family.father_phone) || '-'}</div>
                         </div>
                         <div style="text-align:center;">
-                            ${family.mother_photo ? `<img src="${family.mother_photo}" style="width:60px;height:60px;border-radius:50%;">` : '<div style="width:60px;height:60px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;">👩</div>'}
+                            ${family.mother_photo_url ? `<img src="${family.mother_photo_url}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">` : '<div style="width:60px;height:60px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;">👩</div>'}
                             <div><strong>Mãe:</strong> ${escapeHtml(family.mother_name) || 'Não informado'}</div>
-                            <div>📞 ${escapeHtml(family.mother_phone) || ''}</div>
+                            <div>📞 ${escapeHtml(family.mother_phone) || '-'}</div>
                         </div>
                     </div>
                 </div>
@@ -460,14 +809,11 @@
             modalContent.innerHTML = html;
             document.getElementById('childDetailsModal').style.display = 'flex';
         }
+        function closeChildDetailsModal() { document.getElementById('childDetailsModal').style.display = 'none'; }
 
-        function closeChildDetailsModal() {
-            document.getElementById('childDetailsModal').style.display = 'none';
-        }
-
+        // ========== LISTA DE PRESENTES ==========
         async function loadPresentList() {
             if (!currentSessionId) return;
-            // Buscar check-ins ativos da sessão atual
             let query = supabaseClient
                 .from('kids_check_ins')
                 .select('*, child:child_id(id, name, allergies, birth_date, photo_url)')
@@ -478,7 +824,6 @@
                 query = query.eq('room', currentRoomFilter);
             }
             const { data: checkins } = await query;
-
             const { data: visitants } = await supabaseClient
                 .from('kids_visitants')
                 .select('*')
@@ -486,9 +831,7 @@
 
             let html = '';
             if (checkins?.length) {
-                html += `<h4>👶 Crianças cadastradas</h4>`;
                 for (const c of checkins) {
-                    // aniversariante da semana?
                     let isBirthdayWeek = false;
                     if (c.child.birth_date) {
                         const birth = new Date(c.child.birth_date);
@@ -501,30 +844,34 @@
                     const birthdayIcon = isBirthdayWeek ? '🎂 ' : '';
                     html += `
                         <div class="present-item">
-                            <div>
-                                <strong>${birthdayIcon}${escapeHtml(c.child.name)}</strong>
-                                ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}
-                                <br><small>${new Date(c.checked_in_at).toLocaleTimeString()}</small>
+                            <div class="present-info">
+                                <div class="present-name">${birthdayIcon}${escapeHtml(c.child.name)} ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}</div>
+                                <div class="present-time">Check-in: ${new Date(c.checked_in_at).toLocaleTimeString()}</div>
                             </div>
-                            <div>
-                                <button class="btn-eye" onclick="showChildDetails('${c.child_id}')">👁️</button>
-                                <button class="btn-print" onclick="reprintLabelFromList('${c.id}')">🖨️</button>
-                                <button class="btn-checkout" onclick="checkoutManual('${c.id}')">Check-out</button>
+                            <div class="present-actions">
+                                <button class="btn-icon" onclick="showChildDetails('${c.child_id}')">👁️</button>
+                                <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')">🖨️</button>
+                                <button class="btn-icon btn-danger" onclick="checkoutManual('${c.id}')">Check-out</button>
                             </div>
                         </div>
                     `;
                 }
             }
             if (visitants?.length) {
-                html += `<h4>📝 Visitantes</h4>`;
+                html += `<div style="margin-top:0.5rem;"><strong>📝 Visitantes</strong></div>`;
                 html += visitants.map(v => `
                     <div class="present-item visitant-item">
-                        <div><strong>${escapeHtml(v.child_name)}</strong> (${escapeHtml(v.responsible_name)})<br><small>${new Date(v.checked_in_at).toLocaleTimeString()}</small></div>
-                        <div><button class="btn-checkout" onclick="removeVisitant('${v.id}')">Finalizar</button></div>
+                        <div class="present-info">
+                            <div class="present-name">${escapeHtml(v.child_name)} (resp: ${escapeHtml(v.responsible_name)})</div>
+                            <div class="present-time">Check-in: ${new Date(v.checked_in_at).toLocaleTimeString()}</div>
+                        </div>
+                        <div class="present-actions">
+                            <button class="btn-icon btn-danger" onclick="removeVisitant('${v.id}')">Finalizar</button>
+                        </div>
                     </div>
                 `).join('');
             }
-            if (!checkins?.length && !visitants?.length) html = '<p>Nenhuma criança presente.</p>';
+            if (!checkins?.length && !visitants?.length) html = '<p style="text-align:center;color:#64748b;">Nenhuma criança presente.</p>';
             document.getElementById('presentList').innerHTML = html;
         }
 
@@ -533,19 +880,91 @@
             const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkinId).single();
             if (token) await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', token.id);
             await loadPresentList();
-            document.getElementById('scanResult').innerHTML = '✅ Check-out manual.';
+            showToast('Check-out manual realizado', 'success');
         }
 
         async function removeVisitant(id) {
             await supabaseClient.from('kids_visitants').delete().eq('id', id);
             await loadPresentList();
+            showToast('Visitante removido', 'success');
         }
 
+        // ========== ROOM MODAL ==========
+        async function openRoomModal(roomName) {
+            pendingRoom = roomName;
+            const { data: checkins } = await supabaseClient
+                .from('kids_check_ins')
+                .select('id, child_id, child:child_id(id, name, birth_date, photo_url)')
+                .eq('session_id', currentSessionId)
+                .is('checked_out_at', null);
+            if (!checkins?.length) {
+                showToast('Não há crianças presentes', 'error');
+                return;
+            }
+            const { data: assigned } = await supabaseClient
+                .from('kids_check_ins')
+                .select('id, room')
+                .eq('session_id', currentSessionId)
+                .in('id', checkins.map(c => c.id));
+            const roomMap = new Map();
+            assigned?.forEach(a => roomMap.set(a.id, a.room));
+            childrenForRoom = checkins.map(c => ({
+                checkinId: c.id,
+                childId: c.child_id,
+                name: c.child.name,
+                photo: c.child.photo_url,
+                birth_date: c.child.birth_date,
+                currentRoom: roomMap.get(c.id) || 'todos'
+            }));
+            document.getElementById('roomModalTitle').innerHTML = `Mover para sala: ${roomName}`;
+            const container = document.getElementById('roomChildrenList');
+            container.innerHTML = childrenForRoom.map(child => `
+                <div class="room-item">
+                    ${child.photo ? `<img src="${child.photo}" onerror="this.src='https://via.placeholder.com/40'">` : '<div style="width:45px;height:45px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;">👶</div>'}
+                    <label style="flex:1;">
+                        <input type="checkbox" class="room-checkbox" data-checkin-id="${child.checkinId}" ${child.currentRoom === pendingRoom ? 'checked' : ''}>
+                        ${escapeHtml(child.name)} ${child.birth_date ? `(${calculateAge(child.birth_date)} anos)` : ''}
+                    </label>
+                </div>
+            `).join('');
+            document.getElementById('roomModal').style.display = 'flex';
+        }
+
+        function calculateAge(birthDateStr) {
+            const birth = new Date(birthDateStr);
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+            return age;
+        }
+
+        async function saveRoomAssignments() {
+            const checkboxes = document.querySelectorAll('.room-checkbox');
+            const updates = [];
+            for (const cb of checkboxes) {
+                const checkinId = cb.dataset.checkinId;
+                const shouldAssign = cb.checked;
+                if (shouldAssign) updates.push({ id: checkinId, room: pendingRoom });
+                else {
+                    const child = childrenForRoom.find(c => c.checkinId == checkinId);
+                    if (child && child.currentRoom === pendingRoom) updates.push({ id: checkinId, room: 'todos' });
+                }
+            }
+            for (const upd of updates) await supabaseClient.from('kids_check_ins').update({ room: upd.room }).eq('id', upd.id);
+            closeRoomModal();
+            await loadPresentList();
+            document.querySelector('.tab[data-room="todos"]').click();
+            showToast('Salas atualizadas', 'success');
+        }
+        function closeRoomModal() { document.getElementById('roomModal').style.display = 'none'; pendingRoom = null; }
+
+        // ========== VISITANTE ==========
         async function registerVisitant() {
             const childName = document.getElementById('visitantName').value.trim();
             const respName = document.getElementById('respName').value.trim();
             const respPhone = document.getElementById('respPhone').value.trim();
-            if (!childName || !respName) { alert('Preencha os dados'); return; }
+            if (!childName || !respName) { showToast('Preencha nome da criança e responsável', 'error'); return; }
             const { error } = await supabaseClient.from('kids_visitants').insert({
                 child_name: childName,
                 responsible_name: respName,
@@ -553,8 +972,8 @@
                 session_id: currentSessionId,
                 checked_in_by: currentStaffId
             });
-            if (error) { alert(error.message); return; }
-            alert('Visitante registrado');
+            if (error) { showToast(error.message, 'error'); return; }
+            showToast('Visitante registrado', 'success');
             closeModal();
             await loadPresentList();
             document.getElementById('visitantName').value = '';
@@ -562,6 +981,7 @@
             document.getElementById('respPhone').value = '';
         }
 
+        // ========== SESSÃO ==========
         function openSessionModal() { document.getElementById('sessionModal').style.display = 'flex'; }
         function closeSessionModal() { document.getElementById('sessionModal').style.display = 'none'; }
         async function createSession() {
@@ -569,23 +989,28 @@
             const date = document.getElementById('sessionDate').value;
             const start = document.getElementById('sessionStart').value;
             const end = document.getElementById('sessionEnd').value;
-            if (!name || !date) { alert('Nome e data são obrigatórios'); return; }
+            if (!name || !date) { showToast('Nome e data são obrigatórios', 'error'); return; }
             const { error } = await supabaseClient.from('kids_sessions').insert({
                 name, session_date: date, start_time: start, end_time: end, is_active: true
             });
-            if (error) alert(error.message);
+            if (error) showToast(error.message, 'error');
             else {
+                showToast('Sessão criada!', 'success');
                 closeSessionModal();
                 await loadSessions();
+                document.getElementById('sessionName').value = '';
+                document.getElementById('sessionDate').value = '';
+                document.getElementById('sessionStart').value = '';
+                document.getElementById('sessionEnd').value = '';
             }
         }
 
         function openVisitanteModal() { document.getElementById('visitanteModal').style.display = 'flex'; }
         function closeModal() { document.getElementById('visitanteModal').style.display = 'none'; }
 
-        // RELATÓRIO PDF
+        // ========== RELATÓRIO PDF ==========
         async function gerarRelatorio() {
-            if (!currentSessionId) { alert('Selecione uma sessão primeiro.'); return; }
+            if (!currentSessionId) { showToast('Selecione uma sessão primeiro', 'error'); return; }
             const { data: sessionData } = await supabaseClient.from('kids_sessions').select('name, session_date').eq('id', currentSessionId).single();
             const { data: checkins } = await supabaseClient
                 .from('kids_check_ins')
@@ -635,11 +1060,12 @@
             printDiv.innerHTML = reportHtml;
             printDiv.style.display = 'block';
             const element = document.getElementById('reportContent');
-            html2pdf().from(element).set({ margin: [0.5,0.5,0.5,0.5], filename: `relatorio_${sessionData?.name || 'sessao'}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } }).save().then(() => { printDiv.style.display = 'none'; }).catch(err => { alert('Erro ao gerar PDF'); printDiv.style.display = 'none'; });
+            html2pdf().from(element).set({ margin: [0.5,0.5,0.5,0.5], filename: `relatorio_${sessionData?.name || 'sessao'}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } }).save().then(() => { printDiv.style.display = 'none'; }).catch(() => { showToast('Erro ao gerar PDF', 'error'); printDiv.style.display = 'none'; });
         }
 
         function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : (m === '<' ? '&lt;' : '&gt;')); }
         async function logout() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
+
         init();
     </script>
 </body>
