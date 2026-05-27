@@ -476,6 +476,9 @@
             </div>
         </div>
 
+
+        
+
         <!-- Scanner QR -->
         <div class="card">
             <div class="card-title">
@@ -489,6 +492,18 @@
                 </div>
                 <div id="scanResult" class="scan-result"></div>
             </div>
+        </div>
+
+        <!-- Checkout rápido por número -->
+        <div class="card">
+            <div class="card-title">
+                <span>🔢</span> Check-out por número do crachá
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="checkoutBadgeInput" placeholder="Digite o número do crachá" style="flex: 1;">
+                <button class="btn-primary" onclick="checkoutByBadgeNumber()">✅ Check-out</button>
+            </div>
+            <div id="checkoutResult" style="margin-top: 0.5rem; font-size: 0.85rem; color: #475569;"></div>
         </div>
 
         <!-- Salas e lista de presentes -->
@@ -548,12 +563,19 @@
 
     <!-- Modal para selecionar sala antes do check-in -->
     <div id="selectRoomModal" class="modal">
+        <!-- dentro do modal-content, após o div roomChildInfo, antes dos botões de sala -->
+        <div style="margin-bottom: 1rem;">
+            <label style="font-weight: 500;">🏷️ Número do crachá (opcional)</label>
+            <input type="text" id="badgeNumberInput" placeholder="Ex: 47" style="width: 100%; padding: 0.6rem; border-radius: 1rem; border: 1px solid #cbd5e1; text-align: center;">
+        </div>
+        
         <div class="modal-content" style="max-width: 400px; text-align: center;">
             <button class="modal-close" onclick="closeSelectRoomModal()">&times;</button>
             <div class="modal-title" style="margin-bottom: 0.5rem;">🏷️ Check-in</div>
             <div id="roomChildInfo" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 1rem;">
                 <!-- Informações da criança serão preenchidas dinamicamente -->
-            </div>
+          </div>
+        
             <div style="display: flex; flex-direction: column; gap: 0.8rem;">
                 <button class="room-option" data-room="todos" style="background: #64748b; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">👶 Todos</button>
                 <button class="room-option" data-room="Kids" style="background: #3b82f6; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">🍼 Kids</button>
@@ -766,14 +788,15 @@ function openSelectRoomModal(childName, allergies, birthDate) {
 
 function closeSelectRoomModal() {
     document.getElementById('selectRoomModal').style.display = 'none';
+    document.getElementById('badgeNumberInput').value = '';
     pendingCheckinData = null;
 }
-
+        
 async function confirmCheckinWithRoom(room) {
     if (!pendingCheckinData) return;
     const { tokenId, childId, childName, allergies, tokenValue } = pendingCheckinData;
+    const badgeNumber = document.getElementById('badgeNumberInput').value.trim() || null;
     
-    // Criar check-in com a sala escolhida
     const { data: newCheckin, error: insertError } = await supabaseClient
         .from('kids_check_ins')
         .insert({
@@ -781,7 +804,8 @@ async function confirmCheckinWithRoom(room) {
             session_id: currentSessionId,
             checked_in_by: currentStaffId,
             token_id: tokenId,
-            room: room
+            room: room,
+            badge_number: badgeNumber
         })
         .select()
         .single();
@@ -791,13 +815,15 @@ async function confirmCheckinWithRoom(room) {
         document.getElementById('scanResult').innerHTML = '❌ Erro no check-in.';
     } else {
         const roomDisplay = room === 'todos' ? 'Todos' : room;
-        document.getElementById('scanResult').innerHTML = `✅ Check-in: ${childName} (${roomDisplay})`;
+        document.getElementById('scanResult').innerHTML = `✅ Check-in: ${childName} (${roomDisplay})${badgeNumber ? ` - Crachá: ${badgeNumber}` : ''}`;
         showToast(`Check-in: ${childName} - Sala ${roomDisplay}`, 'success');
         await loadPresentList();
         if (confirm(`Imprimir etiqueta para ${childName}?`)) {
             printLabel(tokenValue, childName, allergies, newCheckin.id);
         }
     }
+    // Limpar campo do crachá
+    document.getElementById('badgeNumberInput').value = '';
     closeSelectRoomModal();
 }
         
@@ -944,7 +970,7 @@ async function confirmCheckinWithRoom(room) {
             html += `
                 <div class="present-item" style="border-left-color: ${c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : (c.room === 'Juvenis' ? '#8b5cf6' : '#10b981'))}">
                     <div class="present-info">
-                        <div class="present-name">${birthdayIcon}${escapeHtml(c.child.name)} ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}</div>
+                        <div class="present-name">${birthdayIcon}${escapeHtml(c.child.name)} ${c.badge_number ? `<span class="badge" style="background:#e2e8f0;">🏷️ ${c.badge_number}</span>` : ''} ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}</div>
                         <div class="present-time">Check-in: ${new Date(c.checked_in_at).toLocaleTimeString()}</div>
                         ${c.room !== 'todos' && currentRoomFilter === 'todos' ? `<div class="present-time" style="color:${c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : '#8b5cf6')}">📌 Sala: ${c.room}</div>` : ''}
                     </div>
@@ -1176,6 +1202,45 @@ async function confirmCheckinWithRoom(room) {
             const element = document.getElementById('reportContent');
             html2pdf().from(element).set({ margin: [0.5,0.5,0.5,0.5], filename: `relatorio_${sessionData?.name || 'sessao'}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } }).save().then(() => { printDiv.style.display = 'none'; }).catch(() => { showToast('Erro ao gerar PDF', 'error'); printDiv.style.display = 'none'; });
         }
+
+        async function checkoutByBadgeNumber() {
+    const badgeNumber = document.getElementById('checkoutBadgeInput').value.trim();
+    if (!badgeNumber) {
+        showToast('Digite um número de crachá', 'error');
+        return;
+    }
+    
+    // Buscar check-in ativo com esse número de crachá na sessão atual
+    const { data: checkin, error } = await supabaseClient
+        .from('kids_check_ins')
+        .select('*, child:child_id(name)')
+        .eq('badge_number', badgeNumber)
+        .eq('session_id', currentSessionId)
+        .is('checked_out_at', null)
+        .maybeSingle();
+    
+    if (error || !checkin) {
+        document.getElementById('checkoutResult').innerHTML = '❌ Nenhum check-in ativo encontrado com este número.';
+        showToast('Crachá não encontrado', 'error');
+        return;
+    }
+    
+    // Confirmar checkout
+    if (confirm(`Check-out de ${checkin.child.name}?`)) {
+        await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkin.id);
+        // Opcional: invalidar token associado
+        const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkin.id).single();
+        if (token) await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', token.id);
+        
+        document.getElementById('checkoutResult').innerHTML = `✅ Check-out de ${checkin.child.name} realizado!`;
+        showToast(`Check-out de ${checkin.child.name}`, 'success');
+        await loadPresentList();
+        document.getElementById('checkoutBadgeInput').value = '';
+        setTimeout(() => { document.getElementById('checkoutResult').innerHTML = ''; }, 3000);
+    }
+}
+
+        
 
         function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : (m === '<' ? '&lt;' : '&gt;')); }
         async function logout() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
