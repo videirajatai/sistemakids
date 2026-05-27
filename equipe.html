@@ -568,15 +568,8 @@
         
         <div class="modal-content" style="max-width: 400px; text-align: center;">
             <button class="modal-close" onclick="closeSelectRoomModal()">&times;</button>
-            <div class="modal-title" style="margin-bottom: 0.5rem;">🏷️ Check-in</div>
-
-            <div style="margin-bottom: 1rem;">
-            <label style="font-weight: 500;">🏷️ Número do crachá (opcional)</label>
-            <input type="text" id="badgeNumberInput" placeholder="Ex: 47" style="width: 100%; padding: 0.6rem; border-radius: 1rem; border: 1px solid #cbd5e1; text-align: center;">
-            </div>
-            
-            <div id="roomChildInfo" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 1rem;">
-                <!-- Informações da criança serão preenchidas dinamicamente -->
+            <div class="modal-title" style="margin-bottom: 0.5rem;">🏷️ Check-in</div>            
+            <div id="roomChildInfo" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 1rem;">                
           </div>
         
             <div style="display: flex; flex-direction: column; gap: 0.8rem;">
@@ -586,6 +579,10 @@
                 <button class="room-option" data-room="Juvenis" style="background: #8b5cf6; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">⚡ Juvenis</button>
             </div>
             <button class="btn-secondary" onclick="closeSelectRoomModal()" style="margin-top: 1rem;">Cancelar</button>
+                        <div style="margin-bottom: 1rem;">
+                        <label style="font-weight: 500;">🏷️ Número do crachá (opcional)</label>
+                        <input type="text" id="badgeNumberInput" placeholder="Ex: 47" style="width: 100%; padding: 0.6rem; border-radius: 1rem; border: 1px solid #cbd5e1; text-align: center;">
+                        </div>
         </div>
     </div>
 
