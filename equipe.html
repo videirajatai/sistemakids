@@ -818,9 +818,9 @@ async function confirmCheckinWithRoom(room) {
         document.getElementById('scanResult').innerHTML = `✅ Check-in: ${childName} (${roomDisplay})${badgeNumber ? ` - Crachá: ${badgeNumber}` : ''}`;
         showToast(`Check-in: ${childName} - Sala ${roomDisplay}`, 'success');
         await loadPresentList();
-        if (confirm(`Imprimir etiqueta para ${childName}?`)) {
+        /*if (confirm(`Imprimir etiqueta para ${childName}?`)) {
             printLabel(tokenValue, childName, allergies, newCheckin.id);
-        }
+        }*/
     }
     // Limpar campo do crachá
     document.getElementById('badgeNumberInput').value = '';
