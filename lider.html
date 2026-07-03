@@ -993,50 +993,48 @@
     // ================================================================
     //  SALVAR MEMBRO (CRIANÇA) – NOVO / EDITAR
     // ================================================================
-    document.getElementById('formAdicionarMembro').onsubmit = async function(e) {
-        e.preventDefault();
-        const btn = this.querySelector('button[type="submit"]');
-        btn.disabled = true;
-        btn.innerText = 'Salvando...';
-
-        const celulaId = document.getElementById('cadastroModalCelulaHidden').value;
-        const dados = {
-            nome: this.nome.value,
-            nascimento: this.nascimento.value || null,
-            telefone: this.telefone.value || null,
-            celula_id: celulaId || null,
-            categoria: this.categoria.value,
-            batizado: this.batizado.checked ? 'Sim' : 'Não',
-            encontro: this.encontro.checked ? 'Sim' : 'Não',
-            lider_treinamento: this.lider_treinamento.checked ? 'Sim' : 'Não',
-            frequenta_culto_kids: this.frequenta_kids.checked ? 'Sim' : 'Não',
-            pai_nome: this.pai_nome.value || null,
-            pai_crente: this.pai_crente.value || 'Não',
-            pai_igreja: this.pai_igreja.value || null,
-            mae_nome: this.mae_nome.value || null,
-            mae_crente: this.mae_crente.value || 'Não',
-            mae_igreja: this.mae_igreja.value || null,
-            arquivado: false
-        };
-
-        try {
-            const { error } = await supabaseClient.from('rk_pessoas').insert([dados]);
-            if (error) throw error;
-            await registrarLogAcao(`Cadastrou criança: ${dados.nome}`);
-            alert("Criança cadastrada com sucesso!");
-            this.reset();
-            fecharModalCadastroMembro();
-            await carregarTudo();
-            if (celulaAtiva) {
-                await abrirModalCelula(celulaAtiva.id);
+   // --- Cadastro de membro (formAdicionarMembro) ---
+    const formAdd = document.getElementById('formAdicionarMembro');
+    if (formAdd) {
+        formAdd.onsubmit = async function(e) {
+            e.preventDefault();
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerText = 'Salvando...';
+            const dados = {
+                nome: this.nome.value,
+                nascimento: this.nascimento.value || null,
+                telefone: this.telefone.value,
+                celula_id: celulaAtiva.id,
+                categoria: this.categoria.value,
+                batizado: this.batizado.checked ? 'Sim' : 'Não',
+                encontro: this.encontro.checked ? 'Sim' : 'Não',
+                lider_treinamento: this.lider_treinamento.checked ? 'Sim' : 'Não',
+                frequenta_culto_kids: this.frequenta_kids.checked ? 'Sim' : 'Não',
+                // Campos que não existem no formulário de cadastro
+                // cursao, ctl, seminario, dizimista não estão presentes
+                // portanto, não os incluímos aqui
+                arquivado: false
+            };
+            try {
+                const { error } = await supabaseClient.from('rk_pessoas').insert([dados]);
+                if (error) throw error;
+                alert('Membro cadastrado!');
+                await registrarLogAcao(`Cadastrou novo membro: ${dados.nome}`);
+                this.reset();
+                fecharModalCadastroMembro();
+                await carregarMembrosDaCelula(celulaAtiva.id);
+                renderizarMembrosCelulaModal(membrosDaCelulaAtiva);
+            } catch (err) {
+                alert('Erro: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Salvar';
             }
-        } catch (err) {
-            alert("Erro ao salvar: " + err.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = 'Salvar';
-        }
-    };
+        };
+    } else {
+        console.warn('Elemento formAdicionarMembro não encontrado');
+    }
 
     document.getElementById('formEditarMembro').onsubmit = async function(e) {
         e.preventDefault();
