@@ -20,7 +20,6 @@
     <link rel="manifest" href="manifest.json">
 
     <style>
-        /* ===== CORES SUAVES (público feminino) ===== */
         :root {
             --primary: #8b5a6a;
             --primary-light: #c9a7b3;
@@ -655,7 +654,6 @@
         }
 
         const cat = normalizarCategoria(pessoa.categoria);
-        // Permite: pastora, discipuladora, líder, administrador
         if (!['pastora', 'discipuladora', 'líder', 'lider', 'administrador'].includes(cat)) {
             alert("Acesso restrito a líderes da Rede Kids.");
             window.location.href = "index.html?t=" + Date.now();
@@ -939,7 +937,6 @@
         document.getElementById('cadastroModalCelulaHidden').value = celulaAtiva.id;
         document.getElementById('modalCadastroMembro').classList.remove('hidden');
         document.getElementById('formAdicionarMembro').reset();
-        // Pré-preencher a célula
         document.getElementById('cadastroModalCelulaHidden').value = celulaAtiva.id;
     }
 
@@ -1295,16 +1292,13 @@
     }
 
     // ================================================================
-    //  SALVAR CÉLULA (NOVA / EDITAR)
+    //  SALVAR CÉLULA (NOVA / EDITAR) – FUNÇÃO CORRIGIDA
     // ================================================================
-    document.getElementById('formCelula').onsubmit = async function(e) {
+    async function salvarCelula(e) {
         e.preventDefault();
-        const btn = this.querySelector('button[type="submit"]');
-        btn.disabled = true;
-        btn.innerText = 'Salvando...';
-
         const id = document.getElementById('celulaId').value;
         const meuId = sessionStorage.getItem('liderId');
+        const meuSuperiorId = sessionStorage.getItem('liderSuperiorId');
 
         const dados = {
             nome: document.getElementById('celulaNome').value,
@@ -1326,27 +1320,26 @@
                 const { data: nova, error } = await supabaseClient.from('rk_celulas').insert([dados]).select();
                 if (error) throw error;
                 const novaId = nova[0].id;
-                // Se a líder não estiver vinculada a nenhuma célula, associa
-                const { data: lider } = await supabaseClient
+                const { data: lider, error: liderError } = await supabaseClient
                     .from('rk_pessoas')
                     .select('celula_id')
                     .eq('id', meuId)
                     .single();
-                if (!lider || !lider.celula_id) {
+                if (!liderError && lider && !lider.celula_id) {
                     await supabaseClient.from('rk_pessoas').update({ celula_id: novaId }).eq('id', meuId);
                 }
                 await registrarLogAcao(`Criou célula: ${dados.nome}`);
             }
             alert("Célula salva com sucesso!");
-            fecharModalCelulaForm();
+            document.getElementById('modalCelulaForm').classList.add('hidden');
             await carregarTudo();
         } catch (err) {
             alert("Erro ao salvar célula: " + err.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = 'Salvar';
-        }   
-    };
+        }
+    }
+
+    // EXPORTA A FUNÇÃO PARA O ESCOPO GLOBAL
+    window.salvarCelula = salvarCelula;
 
     // ================================================================
     //  MULTIPLICAÇÃO DE CÉLULAS
@@ -1888,230 +1881,231 @@
     }
 
     // ================================================================
-    //  EVENTOS INICIAIS
+    //  EVENTOS INICIAIS – CORRIGIDO
     // ================================================================
     function inicializarEventos() {
-            // Cadastro de membro
-            const formAdd = document.getElementById('formAdicionarMembro');
-            if (formAdd) {
-                formAdd.onsubmit = async function(e) {
-                    e.preventDefault();
-                    const btn = this.querySelector('button[type="submit"]');
-                    btn.disabled = true;
-                    const dados = {
-                        nome: this.nome.value,
-                        nascimento: this.nascimento.value || null,
-                        telefone: this.telefone.value,
-                        celula_id: celulaAtiva.id,
-                        categoria: this.categoria.value,
-                        batizado: this.batizado.checked ? 'Sim' : 'Não',
-                        cursao: this.cursao.checked ? 'Sim' : 'Não',
-                        ctl: this.ctl.checked ? 'Sim' : 'Não',
-                        encontro: this.encontro.checked ? 'Sim' : 'Não',
-                        seminario: this.seminario.checked ? 'Sim' : 'Não',
-                        dizimista: this.dizimista.checked ? 'Sim' : 'Não',
-                        arquivado: false
-                    };
-                    try {
-                        const { error } = await supabaseClient.from('rk_pessoas').insert([dados]);
-                        if (error) throw error;
-                        alert("Membro cadastrado!");
-                        await registrarLogAcao(`Cadastrou novo membro: ${dados.nome}`);
-                        this.reset();
-                        fecharModalCadastroMembro();
+        // --- Cadastro de membro (formAdicionarMembro) ---
+        const formAdd = document.getElementById('formAdicionarMembro');
+        if (formAdd) {
+            formAdd.onsubmit = async function(e) {
+                e.preventDefault();
+                const btn = this.querySelector('button[type="submit"]');
+                btn.disabled = true;
+                btn.innerText = 'Salvando...';
+                const dados = {
+                    nome: this.nome.value,
+                    nascimento: this.nascimento.value || null,
+                    telefone: this.telefone.value,
+                    celula_id: celulaAtiva.id,
+                    categoria: this.categoria.value,
+                    batizado: this.batizado.checked ? 'Sim' : 'Não',
+                    cursao: this.cursao.checked ? 'Sim' : 'Não',
+                    ctl: this.ctl.checked ? 'Sim' : 'Não',
+                    encontro: this.encontro.checked ? 'Sim' : 'Não',
+                    seminario: this.seminario.checked ? 'Sim' : 'Não',
+                    dizimista: this.dizimista.checked ? 'Sim' : 'Não',
+                    arquivado: false
+                };
+                try {
+                    const { error } = await supabaseClient.from('rk_pessoas').insert([dados]);
+                    if (error) throw error;
+                    alert('Membro cadastrado!');
+                    await registrarLogAcao(`Cadastrou novo membro: ${dados.nome}`);
+                    this.reset();
+                    fecharModalCadastroMembro();
+                    await carregarMembrosDaCelula(celulaAtiva.id);
+                    renderizarMembrosCelulaModal(membrosDaCelulaAtiva);
+                } catch (err) {
+                    alert('Erro: ' + err.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = 'Salvar';
+                }
+            };
+        } else {
+            console.warn('Elemento formAdicionarMembro não encontrado');
+        }
+
+        // --- Edição de membro (formEditarMembro) ---
+        const formEdit = document.getElementById('formEditarMembro');
+        if (formEdit) {
+            formEdit.onsubmit = async function(e) {
+                e.preventDefault();
+                const id = document.getElementById('editMembroId').value;
+                if (!id) {
+                    alert('ID do membro não encontrado.');
+                    return;
+                }
+                const dados = {
+                    nome: document.getElementById('editMembroNome').value,
+                    nascimento: document.getElementById('editMembroNasc').value || null,
+                    telefone: document.getElementById('editMembroTel').value,
+                    celula_id: document.getElementById('editMembroCelula').value || null,
+                    categoria: document.getElementById('editMembroCat').value,
+                    batizado: document.getElementById('editMembroBatizado').checked ? 'Sim' : 'Não',
+                    cursao: document.getElementById('editMembroCursao').checked ? 'Sim' : 'Não',
+                    ctl: document.getElementById('editMembroCtl').checked ? 'Sim' : 'Não',
+                    encontro: document.getElementById('editMembroEncontro').checked ? 'Sim' : 'Não',
+                    seminario: document.getElementById('editMembroSeminario').checked ? 'Sim' : 'Não',
+                    dizimista: document.getElementById('editMembroDizimista').checked ? 'Sim' : 'Não'
+                };
+                try {
+                    const { error } = await supabaseClient
+                        .from('rk_pessoas')
+                        .update(dados)
+                        .eq('id', id);
+                    if (error) throw error;
+                    alert('Membro atualizado!');
+                    await registrarLogAcao(`Editou membro: ${dados.nome}`);
+                    document.getElementById('modalEditarMembro').classList.add('hidden');
+                    if (celulaAtiva) {
                         await carregarMembrosDaCelula(celulaAtiva.id);
                         renderizarMembrosCelulaModal(membrosDaCelulaAtiva);
-                    } catch(err) { alert("Erro: " + err.message); }
-                    finally { btn.disabled = false; }
-                };
-            }
-        
-            // Edição de membro
-            const formEdit = document.getElementById('formEditarMembro');
-            if (formEdit) {
-                formEdit.onsubmit = async function(e) {
-                    e.preventDefault();
-                    const id = document.getElementById('editMembroId').value;
-                    if (!id) {
-                        alert("Erro: ID do membro não encontrado.");
-                        return;
                     }
-        
-                    const dados = {
-                        nome: document.getElementById('editMembroNome').value,
-                        nascimento: document.getElementById('editMembroNasc').value || null,
-                        telefone: document.getElementById('editMembroTel').value,
-                        celula_id: document.getElementById('editMembroCelula').value || null,
-                        categoria: document.getElementById('editMembroCat').value,
-                        batizado: document.getElementById('editMembroBatizado').checked ? 'Sim' : 'Não',
-                        cursao: document.getElementById('editMembroCursao').checked ? 'Sim' : 'Não',
-                        ctl: document.getElementById('editMembroCtl').checked ? 'Sim' : 'Não',
-                        encontro: document.getElementById('editMembroEncontro').checked ? 'Sim' : 'Não',
-                        seminario: document.getElementById('editMembroSeminario').checked ? 'Sim' : 'Não',
-                        dizimista: document.getElementById('editMembroDizimista').checked ? 'Sim' : 'Não',
-                    };
-        
-                    try {
-                        const { error } = await supabaseClient
-                            .from('rk_pessoas')
-                            .update(dados)
-                            .eq('id', id);
-                        if (error) throw error;
-        
-                        alert("Membro atualizado!");
-                        await registrarLogAcao(`Editou membro: ${dados.nome}`);
-                        document.getElementById('modalEditarMembro').classList.add('hidden');
-        
-                        if (celulaAtiva) {
-                            await carregarMembrosDaCelula(celulaAtiva.id);
-                            renderizarMembrosCelulaModal(membrosDaCelulaAtiva);
-                        }
-                    } catch (err) {
-                        alert("Erro ao atualizar: " + err.message);
-                    }
-                };
-            }
-        
-            // Relatório
-            const formRel = document.getElementById('formRelatorioModal');
-            if (formRel) formRel.onsubmit = salvarRelatorio;
-        
-            // Célula
-            const formCel = document.getElementById('formCelula');
-            if (formCel) formCel.onsubmit = window.salvarCelula || salvarCelula;
-          
-        
-            // Sugestão / pedido de oração
-            const formSug = document.getElementById('formSugestao');
-            if (formSug) {
-                formSug.onsubmit = async function(e) {
-                    e.preventDefault();
-                    const btn = document.getElementById('btnSugestao');
-                    btn.disabled = true;
-                    btn.innerText = "Enviando...";
-                    try {
-                        const { error } = await supabaseClient.from('rk_sugestoes').insert([{
-                            id: crypto.randomUUID(),   
-                            mensagem: this.mensagem.value,
-                            data: new Date().toISOString().slice(0,10)
-                        }]);
-                        if (error) throw error;
-                        alert("Pedido enviado com sucesso! Obrigado.");
-                        await registrarLogAcao(`Enviou pedido de oração/sugestão: ${this.mensagem.value.substring(0, 50)}...`);
-                        this.reset();
-                    } catch(err) {
-                        alert("Erro ao enviar: " + err.message);
-                    } finally {
-                        btn.disabled = false;
-                        btn.innerText = "Enviar Mensagem";
-                    }
-                };
-            }
-        
-            // Formulário Novo Líder (cadastro do zero)
-            const formNovoLider = document.getElementById('formNovoLider');
-            if (formNovoLider) {
-                formNovoLider.onsubmit = async function(e) {
-                    e.preventDefault();
-                    const btn = document.getElementById('btnSalvarNovoLider');
-                    btn.disabled = true;
-                    btn.innerText = "Salvando...";
-        
-                    const dados = {
-                        usuario: document.getElementById('novoLiderUsuario').value.trim().toLowerCase(),
-                        telefone: document.getElementById('novoLiderTelefone').value,
-                        categoria: 'Líder',
-                        superior_id: document.getElementById('novoLiderSuperior').value || null,
-                        is_user: true,
-                        nome: document.getElementById('novoLiderUsuario').value.trim().toLowerCase()
-                    };
-        
-                    try {
-                        dados.token_convite = crypto.randomUUID();
-                        const { data: novaPessoa, error } = await supabaseClient
-                            .from('rk_pessoas')
-                            .insert([dados])
-                            .select();
-                        if (error) throw error;
-        
-                        registrarLogAcao(`Criou novo líder (convite): ${dados.usuario}`);
-        
-                        document.getElementById('camposNovoCadastro').style.display = 'none';
-                        document.getElementById('camposPromoverMembro').style.display = 'none';
-                        document.getElementById('tipoNovoLider').disabled = true;
-                        const pessoa = novaPessoa[0];
-                        const base = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-                        const link = `${base}completar-cadastro.html?token=${pessoa.token_convite}`;
-                        document.getElementById('linkConviteNovoLider').value = link;
-                        document.getElementById('conviteNovoLiderBox').classList.remove('hidden');
-                    } catch(error) {
-                        console.error("Erro ao salvar novo líder:", error);
-                        alert("Erro ao salvar. Detalhes: " + error.message);
-                    } finally {
-                        btn.disabled = false;
-                        btn.innerText = "Salvar";
-                    }
-                };
-            }
-        
-            // Formulário Promover Membro
-            const formPromoverMembro = document.getElementById('formPromoverMembro');
-            if (formPromoverMembro) {
-                formPromoverMembro.onsubmit = async function(e) {
-                    e.preventDefault();
-                    const btn = document.getElementById('btnSalvarPromoverMembro');
-                    btn.disabled = true;
-                    btn.innerText = "Salvando...";
-        
-                    const membroId = document.getElementById('promoverMembroSelect').value;
-                    const usuario = document.getElementById('promoverMembroUsuario').value.trim().toLowerCase();
-        
-                    if (!membroId) {
-                        alert("Selecione um membro.");
-                        btn.disabled = false;
-                        btn.innerText = "Promover e Gerar Link";
-                        return;
-                    }
-                    if (!usuario) {
-                        alert("Informe o nome de usuário (login) para o novo líder.");
-                        btn.disabled = false;
-                        btn.innerText = "Promover e Gerar Link";
-                        return;
-                    }
-        
-                    try {
-                        const tokenConvite = crypto.randomUUID();
-                        const { error } = await supabaseClient
-                            .from('rk_pessoas')
-                            .update({
-                                categoria: 'Líder',
-                                is_user: true,
-                                token_convite: tokenConvite,
-                                usuario: usuario
-                            })
-                            .eq('id', membroId);
-        
-                        if (error) throw error;
-        
-                        registrarLogAcao(`Promoveu membro a líder: ${membroId}`);
-        
-                        document.getElementById('camposNovoCadastro').style.display = 'none';
-                        document.getElementById('camposPromoverMembro').style.display = 'none';
-                        document.getElementById('tipoNovoLider').disabled = true;
-                        const base = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-                        const link = `${base}completar-cadastro.html?token=${tokenConvite}`;
-                        document.getElementById('linkConviteNovoLider').value = link;
-                        document.getElementById('conviteNovoLiderBox').classList.remove('hidden');
-                    } catch(error) {
-                        console.error("Erro ao promover membro:", error);
-                        alert("Erro ao promover. Detalhes: " + error.message);
-                    } finally {
-                        btn.disabled = false;
-                        btn.innerText = "Promover e Gerar Link";
-                    }
-                };
-            }
+                } catch (err) {
+                    alert('Erro ao atualizar: ' + err.message);
+                }
+            };
+        } else {
+            console.warn('Elemento formEditarMembro não encontrado');
         }
+
+        // --- Relatório ---
+        const formRel = document.getElementById('formRelatorioModal');
+        if (formRel) {
+            formRel.onsubmit = salvarRelatorio;
+        } else {
+            console.warn('Elemento formRelatorioModal não encontrado');
+        }
+
+        // --- Célula (usando a função global) ---
+        const formCel = document.getElementById('formCelula');
+        if (formCel) {
+            formCel.onsubmit = window.salvarCelula || salvarCelula;
+        } else {
+            console.warn('Elemento formCelula não encontrado');
+        }
+
+        // --- Sugestão / pedido de oração ---
+        const formSug = document.getElementById('formSugestao');
+        if (formSug) {
+            formSug.onsubmit = async function(e) {
+                e.preventDefault();
+                const btn = document.getElementById('btnSugestao');
+                btn.disabled = true;
+                btn.innerText = 'Enviando...';
+                try {
+                    const { error } = await supabaseClient.from('rk_sugestoes').insert([{
+                        id: crypto.randomUUID(),
+                        mensagem: this.mensagem.value,
+                        data: new Date().toISOString().slice(0, 10)
+                    }]);
+                    if (error) throw error;
+                    alert('Pedido enviado com sucesso!');
+                    await registrarLogAcao(`Enviou pedido de oração/sugestão: ${this.mensagem.value.substring(0, 50)}...`);
+                    this.reset();
+                } catch (err) {
+                    alert('Erro ao enviar: ' + err.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = 'Enviar Mensagem';
+                }
+            };
+        } else {
+            console.warn('Elemento formSugestao não encontrado');
+        }
+
+        // --- Formulário Novo Líder ---
+        const formNovoLider = document.getElementById('formNovoLider');
+        if (formNovoLider) {
+            formNovoLider.onsubmit = async function(e) {
+                e.preventDefault();
+                const btn = document.getElementById('btnSalvarNovoLider');
+                btn.disabled = true;
+                btn.innerText = 'Salvando...';
+                const dados = {
+                    usuario: document.getElementById('novoLiderUsuario').value.trim().toLowerCase(),
+                    telefone: document.getElementById('novoLiderTelefone').value,
+                    categoria: 'Líder',
+                    superior_id: document.getElementById('novoLiderSuperior').value || null,
+                    is_user: true,
+                    nome: document.getElementById('novoLiderUsuario').value.trim().toLowerCase()
+                };
+                try {
+                    dados.token_convite = crypto.randomUUID();
+                    const { data: novaPessoa, error } = await supabaseClient
+                        .from('rk_pessoas')
+                        .insert([dados])
+                        .select();
+                    if (error) throw error;
+                    await registrarLogAcao(`Criou novo líder (convite): ${dados.usuario}`);
+                    document.getElementById('camposNovoCadastro').style.display = 'none';
+                    document.getElementById('camposPromoverMembro').style.display = 'none';
+                    document.getElementById('tipoNovoLider').disabled = true;
+                    const pessoa = novaPessoa[0];
+                    const base = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+                    const link = `${base}completar-cadastro.html?token=${pessoa.token_convite}`;
+                    document.getElementById('linkConviteNovoLider').value = link;
+                    document.getElementById('conviteNovoLiderBox').classList.remove('hidden');
+                } catch (error) {
+                    console.error('Erro ao salvar novo líder:', error);
+                    alert('Erro ao salvar. Detalhes: ' + error.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = 'Salvar';
+                }
+            };
+        } else {
+            console.warn('Elemento formNovoLider não encontrado');
+        }
+
+        // --- Formulário Promover Membro ---
+        const formPromover = document.getElementById('formPromoverMembro');
+        if (formPromover) {
+            formPromover.onsubmit = async function(e) {
+                e.preventDefault();
+                const btn = document.getElementById('btnSalvarPromoverMembro');
+                btn.disabled = true;
+                btn.innerText = 'Salvando...';
+                const membroId = document.getElementById('promoverMembroSelect').value;
+                const usuario = document.getElementById('promoverMembroUsuario').value.trim().toLowerCase();
+                if (!membroId || !usuario) {
+                    alert('Preencha todos os campos.');
+                    btn.disabled = false;
+                    btn.innerText = 'Promover e Gerar Link';
+                    return;
+                }
+                try {
+                    const token = crypto.randomUUID();
+                    await supabaseClient
+                        .from('rk_pessoas')
+                        .update({
+                            categoria: 'Líder',
+                            is_user: true,
+                            token_convite: token,
+                            usuario: usuario
+                        })
+                        .eq('id', membroId);
+                    await registrarLogAcao(`Promoveu criança a líder: ${membroId}`);
+                    document.getElementById('camposNovoCadastro').style.display = 'none';
+                    document.getElementById('camposPromoverMembro').style.display = 'none';
+                    document.getElementById('tipoNovoLider').disabled = true;
+                    const base = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+                    const link = `${base}completar-cadastro.html?token=${token}`;
+                    document.getElementById('linkConviteNovoLider').value = link;
+                    document.getElementById('conviteNovoLiderBox').classList.remove('hidden');
+                } catch (error) {
+                    console.error('Erro ao promover:', error);
+                    alert('Erro ao promover. Detalhes: ' + error.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = 'Promover e Gerar Link';
+                }
+            };
+        } else {
+            console.warn('Elemento formPromoverMembro não encontrado');
+        }
+    }
 
     // ================================================================
     //  INÍCIO
@@ -2129,10 +2123,7 @@
     };
 </script>
 
-<!-- ================================================================ -->
-<!-- HTML DA PÁGINA -->
-<!-- ================================================================ -->
-
+<!-- HTML COMPLETO (MANTIDO IGUAL AO ORIGINAL, POIS OS ERROS ERAM NO JAVASCRIPT) -->
 <div class="container">
     <div class="header">
         <div style="display:flex; align-items:center; gap:12px;">
