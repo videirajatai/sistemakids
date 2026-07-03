@@ -94,23 +94,6 @@
 </head>
 <body>
 
-    <script>
-    // Se houver algum Service Worker antigo controlando a página, desregistra ele imediatamente
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            for(let registration of registrations) {
-                registration.unregister();
-            }
-        });
-    }
-    // Limpa os caches armazenados pelo PWA
-    if ('caches' in window) {
-        caches.keys().then(function(names) {
-            for (let name of names) caches.delete(name);
-        });
-    }
-</script>
-
     <div id="tela-login">
         <div class="card-login">
             
@@ -184,6 +167,46 @@
                 if(contexto === 'login') verificarLogin();
                 else if(contexto === 'recuperar') enviarRecuperacao();
             } 
+        }
+
+        // ========== FUNÇÃO DE REDIRECIONAMENTO POR CATEGORIA ==========
+        function redirecionarPorCategoria(categoria, nome) {
+            // Mapeamento das categorias para as páginas correspondentes
+            const mapa = {
+                'pastora': 'pastora.html',          // ainda não criado
+                'discipuladora': 'discipuladora.html', // ainda não criado
+                'líder': 'lider.html',
+                'lider': 'lider.html',
+                'administrador': 'admin-kids.html',   // ainda não criado
+                'admin': 'admin-kids.html',
+                'criança': 'membro-kids.html',       // ainda não criado
+                'membro': 'membro-kids.html'
+            };
+
+            let pagina = mapa[categoria];
+
+            // Se a categoria não estiver mapeada, ou se a página não existir (por enquanto), redirecionamos para lider.html
+            // se a categoria for autorizada (pastora, discipuladora, líder, admin)
+            const categoriasPermitidas = ['pastora', 'discipuladora', 'líder', 'lider', 'administrador', 'admin'];
+            if (!pagina || !categoriasPermitidas.includes(categoria)) {
+                // Se for uma criança, mostramos mensagem e voltamos ao login
+                if (categoria === 'criança' || categoria === 'membro') {
+                    alert("Acesso para crianças ainda não disponível. Aguarde o lançamento da área infantil.");
+                    window.location.href = "index.html";
+                    return;
+                }
+                // Fallback: tenta lider.html (se a categoria for permitida)
+                if (categoriasPermitidas.includes(categoria)) {
+                    pagina = 'lider.html';
+                } else {
+                    alert("Categoria não reconhecida. Entre em contato com o administrador.");
+                    window.location.href = "index.html";
+                    return;
+                }
+            }
+
+            // Redirecionar
+            entrarNoPainel(nome, pagina);
         }
 
         // ========== LOGIN ==========
@@ -269,42 +292,8 @@
             sessionStorage.setItem('urlApi', urlBackend); // mantido para agenda
             sessionStorage.setItem('categoria', categoriaNormalizada);
         
-            // Definição de redirecionamento (apenas líder.html por enquanto)
-            // Futuramente podemos ter painéis separados para discipuladora, pastora, admin.
-            let paginas = [];
-            if (categoriaNormalizada === 'administrador' || categoriaNormalizada === 'admin') {
-                // Admin pode acessar o líder e também um futuro admin
-                paginas = [
-                    { nome: "Painel Líder", url: "lider" },
-                    // { nome: "Painel Admin Kids", url: "admin-kids" } // futuro
-                ];
-            } else if (['pastora', 'discipuladora', 'líder', 'lider'].includes(categoriaNormalizada)) {
-                paginas = [{ nome: "Painel Líder", url: "lider" }];
-            } else {
-                // Para criança ou outros, talvez uma área de membro? Vamos redirecionar para o líder também (acesso restrito será tratado lá)
-                paginas = [{ nome: "Painel Líder", url: "lider" }];
-            }
-        
-            const urlsPermitidas = paginas.map(p => p.url);
-            sessionStorage.setItem('paginasPermitidas', JSON.stringify(urlsPermitidas));
-        
-            if (paginas.length === 1) {
-                entrarNoPainel(nomeReal, paginas[0].url);
-            } else {
-                document.getElementById('area-form').style.display = 'none';
-                document.getElementById('area-escolha').style.display = 'block';
-                document.getElementById('titulo-login').innerText = `Olá, ${nomeReal}`;
-                document.getElementById('subtitulo-login').innerText = "Escolha o painel:";
-        
-                const divBotoes = document.getElementById('botoes-painel');
-                divBotoes.innerHTML = '';
-                paginas.forEach(pag => {
-                    let b = document.createElement('button');
-                    b.innerText = pag.nome;
-                    b.onclick = () => entrarNoPainel(nomeReal, pag.url);
-                    divBotoes.appendChild(b);
-                });
-            }
+            // Redirecionar com base na categoria
+            redirecionarPorCategoria(categoriaNormalizada, nomeReal);
         }
 
         function entrarNoPainel(nome, urlDestino) {
@@ -318,7 +307,7 @@
                 splashScreen.style.display = 'flex';
                 setTimeout(() => splashScreen.style.opacity = '1', 10);
                 setTimeout(() => {
-                    window.location.href = urlDestino + ".html?t=" + Date.now();
+                    window.location.href = urlDestino;
                 }, 1000);
             }, 400);
         }
@@ -371,15 +360,13 @@
         }
 
         // ========== INICIALIZAÇÃO ==========
-        // Se já estiver logado, redirecionar para o painel correto
+        // Se já estiver logado, redirecionar com base na categoria salva
         (async () => {
             const usuario = sessionStorage.getItem('usuarioLogado');
-            if (usuario) {
-                // Redirecionar automaticamente para o líder (ou outro painel)
-                // Verificar a categoria salva
-                const cat = sessionStorage.getItem('categoria') || '';
-                // Por simplicidade, redirecionamos para líder.html
-                window.location.href = "lider.html?t=" + Date.now();
+            const categoria = sessionStorage.getItem('categoria');
+            if (usuario && categoria) {
+                // Redirecionar automaticamente
+                redirecionarPorCategoria(categoria, usuario);
             }
         })();
     </script>
