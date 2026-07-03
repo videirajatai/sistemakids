@@ -34,6 +34,10 @@
         .erro { color: var(--danger-text); font-size: 14px; margin-top: 15px; display: none; background: #fdf0ee; padding: 10px; border-radius: 8px; border: 1px solid #f5d6d2; }
         .sucesso { color: var(--success-text); font-size: 14px; margin-top: 15px; display: none; background: #d1e7dd; padding: 10px; border-radius: 8px; border: 1px solid #b8d9c0; }
         .logo { width: 70px; margin-bottom: 10px; border-radius: 50%; }
+        .loading { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 0.8s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn-loading { display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-loading .loading { width: 18px; height: 18px; }
     </style>
 </head>
 <body>
@@ -41,12 +45,12 @@
     <div class="card">
         <img src="logo.png" alt="Logo Kids" class="logo">
         <h2>Criar Nova Senha</h2>
-        <p>Digite sua nova senha de <strong>6 dígitos numéricos</strong> abaixo.</p>
+        <p id="mensagem-instrucao">Digite sua nova senha de <strong>6 dígitos numéricos</strong> abaixo.</p>
         
-        <input type="password" id="nova-senha" placeholder="6 dígitos numéricos (ex: 123456)" inputmode="numeric" maxlength="6" pattern="[0-9]*" required autocomplete="new-password">
-        <input type="password" id="confirma-senha" placeholder="Repita a nova senha" inputmode="numeric" maxlength="6" pattern="[0-9]*" required autocomplete="new-password">
+        <input type="password" id="nova-senha" placeholder="6 dígitos numéricos (ex: 123456)" inputmode="numeric" maxlength="6" pattern="[0-9]*" required autocomplete="new-password" disabled>
+        <input type="password" id="confirma-senha" placeholder="Repita a nova senha" inputmode="numeric" maxlength="6" pattern="[0-9]*" required autocomplete="new-password" disabled>
         
-        <button id="btn-salvar" onclick="salvarNovaSenha()">Salvar Nova Senha</button>
+        <button id="btn-salvar" onclick="salvarNovaSenha()" disabled>Salvar Nova Senha</button>
         <p id="msg-erro" class="erro"></p>
         <p id="msg-sucesso" class="sucesso"></p>
     </div>
@@ -69,6 +73,62 @@
                 console.error("Erro ao registrar log:", e);
             }
         }
+
+        // ============================================================
+        //  INICIALIZAR – RESTAURAR SESSÃO A PARTIR DO TOKEN NA URL
+        // ============================================================
+        (async function init() {
+            const btn = document.getElementById('btn-salvar');
+            const novaSenha = document.getElementById('nova-senha');
+            const confirmaSenha = document.getElementById('confirma-senha');
+            const msgInstrucao = document.getElementById('mensagem-instrucao');
+
+            // Verifica se há um token de recuperação na URL (hash fragment)
+            // O Supabase redireciona com #access_token=...&refresh_token=...
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            const accessToken = params.get('access_token');
+            const refreshToken = params.get('refresh_token');
+            const type = params.get('type'); // pode ser 'recovery'
+
+            if (accessToken && refreshToken) {
+                try {
+                    // Estabelece a sessão com os tokens recebidos
+                    const { data, error } = await supabaseClient.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken
+                    });
+                    if (error) throw error;
+
+                    // Habilita os campos e o botão
+                    novaSenha.disabled = false;
+                    confirmaSenha.disabled = false;
+                    btn.disabled = false;
+                    msgInstrucao.innerText = 'Digite sua nova senha de 6 dígitos.';
+                } catch (err) {
+                    document.getElementById('msg-erro').innerText = 'Erro ao validar o link de recuperação. Tente novamente ou solicite um novo link.';
+                    document.getElementById('msg-erro').style.display = 'block';
+                    console.error(err);
+                }
+            } else {
+                // Se não houver tokens, tenta usar a sessão existente (caso o usuário já esteja logado)
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) {
+                    // Já existe sessão, pode habilitar os campos
+                    novaSenha.disabled = false;
+                    confirmaSenha.disabled = false;
+                    btn.disabled = false;
+                    msgInstrucao.innerText = 'Digite sua nova senha de 6 dígitos.';
+                } else {
+                    // Sem tokens e sem sessão: não é possível redefinir
+                    document.getElementById('msg-erro').innerText = 'Link de recuperação inválido ou expirado. Solicite um novo link.';
+                    document.getElementById('msg-erro').style.display = 'block';
+                    btn.disabled = true;
+                    novaSenha.disabled = true;
+                    confirmaSenha.disabled = true;
+                }
+            }
+        })();
 
         // ============================================================
         //  SALVAR NOVA SENHA
@@ -105,20 +165,19 @@
                 return;
             }
 
-            // Bloquear botão
+            // Bloquear botão com spinner
             btn.disabled = true;
-            btn.innerText = "Salvando...";
+            btn.innerHTML = '<span class="btn-loading"><span class="loading"></span> Salvando...</span>';
 
             try {
-                // Atualizar a senha no Auth
+                // Atualizar a senha no Auth – agora com sessão ativa
                 const { data, error } = await supabaseClient.auth.updateUser({
                     password: senha1
                 });
 
                 if (error) throw error;
 
-                // Registrar log (opcional, mas consistente com o sistema)
-                // Tentamos obter o e-mail do usuário atual
+                // Registrar log
                 const { data: { user } } = await supabaseClient.auth.getUser();
                 const email = user?.email || 'sistema';
                 await registrarLogAcao(`Redefiniu a senha (usuário: ${email})`, email);
@@ -126,15 +185,24 @@
                 // Sucesso
                 sucesso.innerText = "Senha redefinida com sucesso! Redirecionando para o login...";
                 sucesso.style.display = 'block';
+
+                // Limpar campos e desabilitar para evitar novas tentativas
+                document.getElementById('nova-senha').value = '';
+                document.getElementById('confirma-senha').value = '';
+                document.getElementById('nova-senha').disabled = true;
+                document.getElementById('confirma-senha').disabled = true;
+                btn.disabled = true;
+                btn.innerHTML = 'Salvar Nova Senha';
+
                 setTimeout(() => {
                     window.location.href = "index.html?t=" + Date.now();
-                }, 2000);
+                }, 2500);
 
             } catch (error) {
                 erro.innerText = "Erro ao redefinir: " + error.message;
                 erro.style.display = 'block';
                 btn.disabled = false;
-                btn.innerText = "Salvar Nova Senha";
+                btn.innerHTML = 'Salvar Nova Senha';
             }
         }
     </script>
