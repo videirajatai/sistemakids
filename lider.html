@@ -11,7 +11,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
 
-    <!-- Favicon / PWA -->
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -23,9 +22,9 @@
     <style>
         /* ===== CORES SUAVES (público feminino) ===== */
         :root {
-            --primary: #8b5a6a;        /* rosa‑acastanhado suave */
+            --primary: #8b5a6a;
             --primary-light: #c9a7b3;
-            --accent: #d4a373;         /* dourado suave */
+            --accent: #d4a373;
             --bg-body: #fcf7f5;
             --card-bg: #ffffff;
             --text-main: #4a3b3e;
@@ -44,11 +43,10 @@
             font-family: 'Inter', sans-serif;
             background: var(--bg-body);
             color: var(--text-main);
-            padding-bottom: 80px;
+            padding-bottom: 20px;
         }
         .container { max-width: 800px; margin: 0 auto; padding: 15px; }
 
-        /* Cabeçalho */
         .header {
             display: flex;
             align-items: center;
@@ -78,7 +76,6 @@
         }
         .btn-refresh:hover { color: var(--primary); transform: rotate(90deg); }
 
-        /* Navegação */
         .nav-menu {
             display: flex;
             gap: 8px;
@@ -111,7 +108,6 @@
             box-shadow: 0 4px 12px rgba(139, 90, 106, 0.25);
         }
 
-        /* Cards de célula */
         .celula-card {
             background: #fffcf9;
             border-radius: var(--radius);
@@ -138,7 +134,6 @@
             font-weight: 600;
         }
 
-        /* Grid de membros (crianças) */
         .member-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
         @media (min-width: 600px) {
             .member-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
@@ -164,7 +159,7 @@
             font-size: 0.6rem;
             padding: 2px 8px;
             border-radius: 20px;
-            background: #f0e8e5;
+            background: #f0ecea;
             color: var(--text-light);
             font-weight: 600;
             border: 1px solid transparent;
@@ -173,6 +168,8 @@
         .cat-badge.Líder { background: #f3e5d9; color: #8b5a6a; border-color: #d4a373; }
         .cat-badge.Discipuladora { background: #e3e8f0; color: #4a6a8b; border-color: #8ba3c9; }
         .cat-badge.Pastora { background: #f0e3e3; color: #8b4a4a; border-color: #c98b8b; }
+        .cat-badge.Criança { background: #eaf6ed; color: #2d6a4f; border-color: #b8d9c0; }
+
         .card-info {
             font-size: 0.75rem;
             color: var(--text-light);
@@ -228,7 +225,6 @@
         .btn-card:hover { background: #f5f0ed; }
         .btn-zap { background: #f0faf5; color: #2d6a4f; border-color: #b8d9c0; }
 
-        /* Formulários */
         .form-box {
             background: white;
             padding: 20px;
@@ -344,7 +340,6 @@
         input:checked + .slider { background-color: var(--success-text); }
         input:checked + .slider:before { transform: translateX(22px); }
 
-        /* Tabelas */
         .table-clean {
             width: 100%;
             border-collapse: collapse;
@@ -367,7 +362,6 @@
             font-size: 0.85rem;
         }
 
-        /* Modal */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0;
@@ -410,9 +404,9 @@
             align-items: center;
             justify-content: center;
         }
+
         .hidden { display: none !important; }
 
-        /* Bíblia offcanvas (idêntica à do líder) */
         .biblia-offcanvas {
             position: fixed;
             top: 0;
@@ -483,6 +477,15 @@
             font-style: italic;
             margin-top: 50px;
         }
+        .floating-nav {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 15;
+        }
         .nav-capitulo-btn {
             background: rgba(139, 90, 106, 0.7);
             color: white;
@@ -500,17 +503,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
         .nav-capitulo-btn:active { opacity: 1; background: var(--primary); transform: scale(1.05); }
-        .floating-nav {
-            position: fixed;
-            bottom: 100px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 15;
-        }
 
-        /* Lista de palavras */
         .word-list-item {
             background: white;
             border-radius: var(--radius);
@@ -528,7 +521,6 @@
         .word-date { font-weight: 700; color: var(--text-main); font-size: 0.95rem; }
         .word-theme { font-size: 0.85rem; color: var(--text-light); margin-top: 2px; }
 
-        /* PIX / Ofertas */
         .pix-copy-box {
             display: flex;
             align-items: center;
@@ -566,7 +558,49 @@
         }
         .pix-copy-box button:active { background: #c4906a; }
 
-        /* Imprimir */
+        .modal-celula-full {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: white;
+            z-index: 3000;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .modal-celula-full.hidden { display: none; }
+
+        .copy-link-box {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .copy-link-box input { flex: 1; margin-bottom: 0; }
+        .btn-copy-link {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .versao-item {
+            padding: 15px;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            transition: all 0.2s;
+        }
+        .versao-item:hover { background: var(--primary); color: white; }
+        .versao-item.selecionada { background: var(--primary); color: white; }
+
         @media print {
             body * { visibility: hidden; }
             .modal-content, .modal-content * { visibility: visible; }
@@ -578,19 +612,19 @@
 <body>
 
 <script>
-    // ============================================================
+    // ================================================================
     //  CONFIGURAÇÃO SUPABASE (tabelas com prefixo rk_)
-    // ============================================================
+    // ================================================================
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+    const API_URL = sessionStorage.getItem('urlApi');
 
     function normalizarCategoria(cat) {
         return (cat || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     }
 
-    // ============================================================
+    // ================================================================
     //  VARIÁVEIS GLOBAIS
-    // ============================================================
-    let dadosMembros = [];          // crianças
+    // ================================================================
     let dadosCelulas = [];
     let celulasDoLider = [];
     let celulaAtiva = null;
@@ -599,14 +633,14 @@
     let listaAgenda = [];
     let palavraAtual = null;
     let dadosTodasCelulas = [];
-    let mapaNomes = {}; // id -> nome (para líderes, discipuladoras, etc)
+    let mapaNomes = {};
 
-    // ============================================================
+    // ================================================================
     //  AUTENTICAÇÃO E CARREGAMENTO INICIAL
-    // ============================================================
+    // ================================================================
     (async () => {
         const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) { window.location.href = "index.html"; return; }
+        if (!user) { window.location.href = "index.html?t=" + Date.now(); return; }
 
         const { data: pessoa } = await supabaseClient
             .from('rk_pessoas')
@@ -616,15 +650,15 @@
 
         if (!pessoa) {
             alert("Registro não encontrado na base. Contate o administrador.");
-            window.location.href = "index.html";
+            window.location.href = "index.html?t=" + Date.now();
             return;
         }
 
         const cat = normalizarCategoria(pessoa.categoria);
-        // Permite: pastora, discipuladora, líder (e administrador para testes)
+        // Permite: pastora, discipuladora, líder, administrador
         if (!['pastora', 'discipuladora', 'líder', 'lider', 'administrador'].includes(cat)) {
             alert("Acesso restrito a líderes da Rede Kids.");
-            window.location.href = "index.html";
+            window.location.href = "index.html?t=" + Date.now();
             return;
         }
 
@@ -637,9 +671,9 @@
         inicializarEventos();
     })();
 
-    // ============================================================
+    // ================================================================
     //  LOG
-    // ============================================================
+    // ================================================================
     async function registrarLogAcao(acao) {
         try {
             await supabaseClient.from('rk_logs').insert([{
@@ -651,17 +685,16 @@
         } catch (e) { console.error("Erro no log:", e); }
     }
 
-    // ============================================================
+    // ================================================================
     //  CARREGAR TUDO
-    // ============================================================
+    // ================================================================
     async function carregarTudo() {
         const icon = document.getElementById('iconRefresh');
         if (icon) icon.classList.add('fa-spin');
+        const meuId = sessionStorage.getItem('liderId');
 
         try {
-            const meuId = sessionStorage.getItem('liderId');
-
-            // 1. Células que a líder lidera (lider_user_id = meuId)
+            // 1. Células que a líder lidera
             const { data: celData, error: celError } = await supabaseClient
                 .from('rk_celulas')
                 .select('*')
@@ -679,7 +712,7 @@
                 .order('nome');
             if (!todasError) dadosTodasCelulas = todasCelulas || [];
 
-            // 3. Mapa de nomes (para exibir líderes, discipuladoras, etc)
+            // 3. Mapa de nomes
             const idsPessoas = [...new Set([
                 ...dadosTodasCelulas.map(c => c.lider_user_id).filter(id => id),
                 ...dadosTodasCelulas.map(c => c.supervisor_user_id).filter(id => id),
@@ -720,7 +753,6 @@
                     encontro: m.encontro || 'Não',
                     lider_treinamento: m.lider_treinamento || 'Não',
                     frequenta_culto_kids: m.frequenta_culto_kids || 'Não',
-                    // dados dos pais
                     pai_nome: m.pai_nome || '',
                     pai_crente: m.pai_crente || 'Não',
                     pai_igreja: m.pai_igreja || '',
@@ -731,17 +763,13 @@
                 };
             }) : [];
 
-            // 5. Palavras
-            const { data: palavras } = await supabaseClient
-                .from('rk_palavras')
-                .select('*')
-                .order('data', { ascending: false });
-            listaPalavras = palavras || [];
-            renderizarPalavras(listaPalavras);
+            // 5. Renderizar células
+            renderizarCelulas(dadosTodasCelulas);
+            renderizarSelectorCelulas(celulasDoLider);
+            document.getElementById('nenhumaCelulaMsg').style.display = celulasDoLider.length ? 'none' : 'block';
 
             // 6. Agenda (via Google Script – mantido)
             try {
-                const API_URL = sessionStorage.getItem('urlApi') || 'SUA_URL';
                 const res = await fetch(API_URL, {
                     method: 'POST',
                     body: JSON.stringify({ action: 'buscarAgenda', payload: { usuarioAtivo: sessionStorage.getItem('usuarioLogado') } })
@@ -749,24 +777,28 @@
                 const json = await res.json();
                 listaAgenda = json.dados || [];
                 renderizarAgenda(listaAgenda);
-            } catch (e) { renderizarAgenda([]); }
+            } catch(e) { renderizarAgenda([]); }
 
-            // 7. Renderizar
-            renderizarCelulas(dadosTodasCelulas);
-            renderizarSelectorCelulas(celulasDoLider);
-            document.getElementById('nenhumaCelulaMsg').style.display = celulasDoLider.length ? 'none' : 'block';
+            // 7. Palavras
+            const { data: palavras, error: palError } = await supabaseClient
+                .from('rk_palavras')
+                .select('*')
+                .order('data', { ascending: false });
+            if (palError) throw palError;
+            listaPalavras = palavras || [];
+            renderizarPalavras(listaPalavras);
 
-        } catch (err) {
-            console.error("Erro ao carregar dados:", err);
+        } catch(e) {
+            console.error("Erro ao carregar dados:", e);
             alert("Erro ao carregar dados. Verifique sua conexão.");
         } finally {
             if (icon) icon.classList.remove('fa-spin');
         }
     }
 
-    // ============================================================
-    //  RENDERIZAR CÉLULAS (CARDS NA ABA "MINHA CÉLULA")
-    // ============================================================
+    // ================================================================
+    //  RENDERIZAR CÉLULAS (CARDS)
+    // ================================================================
     function renderizarSelectorCelulas(celulas) {
         const container = document.getElementById('listaCelulasLider');
         container.innerHTML = '';
@@ -791,9 +823,6 @@
         });
     }
 
-    // ============================================================
-    //  RENDERIZAR TABELA DE CÉLULAS (ABA "CÉLULAS")
-    // ============================================================
     function renderizarCelulas(lista) {
         const tbody = document.getElementById('corpoCelulas');
         tbody.innerHTML = '';
@@ -815,9 +844,9 @@
         });
     }
 
-    // ============================================================
+    // ================================================================
     //  MODAL DA CÉLULA (VISUALIZAR MEMBROS)
-    // ============================================================
+    // ================================================================
     async function abrirModalCelula(celulaId) {
         const cel = dadosTodasCelulas.find(c => c.id === celulaId);
         if (!cel) return;
@@ -902,15 +931,15 @@
         return idade;
     }
 
-    // ============================================================
-    //  CADASTRO DE MEMBRO (CRIANÇA) – MODAL
-    // ============================================================
+    // ================================================================
+    //  CADASTRO DE MEMBRO (CRIANÇA)
+    // ================================================================
     function abrirModalCadastroMembro() {
         if (!celulaAtiva) { alert("Selecione uma célula primeiro."); return; }
         document.getElementById('cadastroModalCelulaHidden').value = celulaAtiva.id;
         document.getElementById('modalCadastroMembro').classList.remove('hidden');
-        // Resetar formulário
         document.getElementById('formAdicionarMembro').reset();
+        // Pré-preencher a célula
         document.getElementById('cadastroModalCelulaHidden').value = celulaAtiva.id;
     }
 
@@ -920,9 +949,9 @@
         }
     }
 
-    // ============================================================
+    // ================================================================
     //  EDIÇÃO DE MEMBRO (CRIANÇA)
-    // ============================================================
+    // ================================================================
     async function abrirEditarMembro(id) {
         const { data: m, error } = await supabaseClient
             .from('rk_pessoas')
@@ -942,7 +971,6 @@
         document.getElementById('editMembroMaeCrente').value = m.mae_crente || 'Não';
         document.getElementById('editMembroMaeIgreja').value = m.mae_igreja || '';
 
-        // Popular select de células
         const selCel = document.getElementById('editMembroCelula');
         selCel.innerHTML = '<option value="">Selecione uma célula</option>';
         dadosTodasCelulas.forEach(c => {
@@ -965,9 +993,9 @@
         }
     }
 
-    // ============================================================
+    // ================================================================
     //  SALVAR MEMBRO (CRIANÇA) – NOVO / EDITAR
-    // ============================================================
+    // ================================================================
     document.getElementById('formAdicionarMembro').onsubmit = async function(e) {
         e.preventDefault();
         const btn = this.querySelector('button[type="submit"]');
@@ -1013,7 +1041,6 @@
         }
     };
 
-    // Formulário de edição
     document.getElementById('formEditarMembro').onsubmit = async function(e) {
         e.preventDefault();
         const id = document.getElementById('editMembroId').value;
@@ -1058,9 +1085,9 @@
         }
     };
 
-    // ============================================================
+    // ================================================================
     //  ARQUIVAR / RESTAURAR MEMBRO
-    // ============================================================
+    // ================================================================
     async function arquivarMembro(id) {
         if (!confirm("Arquivar esta criança?")) return;
         await supabaseClient.from('rk_pessoas').update({ arquivado: true }).eq('id', id);
@@ -1076,9 +1103,9 @@
         await carregarTudo();
     }
 
-    // ============================================================
+    // ================================================================
     //  RELATÓRIO DA CÉLULA
-    // ============================================================
+    // ================================================================
     function abrirModalRelatorio() {
         if (!celulaAtiva) { alert("Selecione uma célula."); return; }
         document.getElementById('relModalCelulaNome').innerText = celulaAtiva.nome;
@@ -1157,9 +1184,9 @@
         }
     }
 
-    // ============================================================
+    // ================================================================
     //  APASCENTAR (FALTOSOS)
-    // ============================================================
+    // ================================================================
     async function abrirApascentar() {
         if (!celulaAtiva) return;
         const faltosos = await calcularFaltosos();
@@ -1199,9 +1226,9 @@
         return membros.filter(m => faltasMap[m.id] > 0).map(m => ({ ...m, faltas: faltasMap[m.id] }));
     }
 
-    // ============================================================
+    // ================================================================
     //  GESTÃO DE CÉLULAS (NOVA / EDITAR)
-    // ============================================================
+    // ================================================================
     function abrirNovaCelula() {
         document.getElementById('celulaId').value = '';
         document.getElementById('celulaNome').value = '';
@@ -1210,7 +1237,6 @@
         document.getElementById('celulaDataInicio').value = '';
         document.getElementById('celulaAcompanhaAdulto').value = 'Não';
         document.getElementById('celulaAnfitriao').value = '';
-        // Preencher select de discipuladoras
         preencherSelectSupervisores();
         document.getElementById('modalCelulaForm').classList.remove('hidden');
     }
@@ -1226,11 +1252,9 @@
         document.getElementById('celulaAcompanhaAdulto').value = cel.acompanha_celula_adulto || 'Não';
         document.getElementById('celulaAnfitriao').value = cel.anfitriao || '';
 
-        // Preencher select de discipuladoras
         await preencherSelectSupervisores();
         document.getElementById('celulaSupervisor').value = cel.supervisor_user_id || '';
 
-        // Colíder (líder em treinamento) – buscar membros da célula
         const selectColider = document.getElementById('celulaColider');
         selectColider.innerHTML = '<option value="">Nenhum</option>';
         const { data: membros } = await supabaseClient
@@ -1255,7 +1279,7 @@
         const { data: discipuladoras } = await supabaseClient
             .from('rk_pessoas')
             .select('id, nome')
-            .ilike('categoria', 'Discipuladora')
+            .ilike('categoria', 'Discipuladora%')
             .order('nome');
         if (discipuladoras) {
             discipuladoras.forEach(d => {
@@ -1270,9 +1294,9 @@
         }
     }
 
-    // ============================================================
+    // ================================================================
     //  SALVAR CÉLULA (NOVA / EDITAR)
-    // ============================================================
+    // ================================================================
     document.getElementById('formCelula').onsubmit = async function(e) {
         e.preventDefault();
         const btn = this.querySelector('button[type="submit"]');
@@ -1324,10 +1348,9 @@
         }
     };
 
-    // ============================================================
-    //  MULTIPLICAÇÃO DE CÉLULAS (similar ao líder)
-    // ============================================================
-    // (Implementação resumida, mantendo a mesma lógica)
+    // ================================================================
+    //  MULTIPLICAÇÃO DE CÉLULAS
+    // ================================================================
     let listaOriginalMembros = [];
     let membrosQueFicam = [];
     let membrosQueVao = [];
@@ -1379,7 +1402,6 @@
         if (celulaOrigem) {
             document.getElementById('multNomeNovaCelula').value = (celulaOrigem.nome || 'Célula') + ' - Multiplicação';
         }
-        // Preencher select de novo líder
         const selLider = document.getElementById('multNovoLider');
         selLider.innerHTML = '<option value="">Selecione...</option>';
         const idsCelulas = dadosTodasCelulas.map(c => c.id);
@@ -1472,9 +1494,9 @@
         }
     }
 
-    // ============================================================
-    //  NOVO LÍDER (convite / promoção) – similar ao líder
-    // ============================================================
+    // ================================================================
+    //  NOVO LÍDER (convite / promoção)
+    // ================================================================
     function abrirModalNovoLider() {
         document.getElementById('tipoNovoLider').value = 'novo';
         alternarCamposNovoLider();
@@ -1536,7 +1558,6 @@
         }
     }
 
-    // Formulário novo líder (via convite)
     document.getElementById('formNovoLider').onsubmit = async function(e) {
         e.preventDefault();
         const btn = document.getElementById('btnSalvarNovoLider');
@@ -1576,7 +1597,6 @@
         }
     };
 
-    // Formulário promover membro a líder
     document.getElementById('formPromoverMembro').onsubmit = async function(e) {
         e.preventDefault();
         const btn = document.getElementById('btnSalvarPromoverMembro');
@@ -1623,9 +1643,9 @@
         alert('Link copiado!');
     }
 
-    // ============================================================
+    // ================================================================
     //  PALAVRAS
-    // ============================================================
+    // ================================================================
     function renderizarPalavras(lista) {
         const div = document.getElementById('listaPalavras');
         div.innerHTML = '';
@@ -1665,6 +1685,7 @@
         }
         document.getElementById('modalPalavra').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
+        registrarLogAcao(`Abriu a palavra "${p.tema || 'Sem título'}" (${dataF})`);
     }
 
     function fecharModalPalavra(e) {
@@ -1693,9 +1714,9 @@
         URL.revokeObjectURL(url);
     }
 
-    // ============================================================
+    // ================================================================
     //  AGENDA
-    // ============================================================
+    // ================================================================
     function renderizarAgenda(lista) {
         const div = document.getElementById('listaAgenda');
         div.innerHTML = '';
@@ -1730,9 +1751,9 @@
         });
     }
 
-    // ============================================================
+    // ================================================================
     //  OFERTAS / PIX
-    // ============================================================
+    // ================================================================
     function copiarPix() {
         const input = document.getElementById('chavePix');
         input.select();
@@ -1745,12 +1766,13 @@
                 btn.innerHTML = '<i class="far fa-copy"></i> Copiar';
                 btn.style.background = '#d4a373';
             }, 2000);
+            registrarLogAcao('Copiou a chave PIX');
         }).catch(() => alert("Copie manualmente: " + input.value));
     }
 
-    // ============================================================
+    // ================================================================
     //  BÍBLIA (offcanvas)
-    // ============================================================
+    // ================================================================
     let versaoSelecionada = localStorage.getItem('biblia_versao') || 'msg';
     const siglasVersoes = { msg:'MSG', nvi:'NVI', aa:'ARA', acf:'ACF', ntlh:'NTLH' };
     const nomesCompletos = {
@@ -1846,9 +1868,9 @@
         }
     }
 
-    // ============================================================
-    //  NAVEGAÇÃO ENTRE ABAS
-    // ============================================================
+    // ================================================================
+    //  NAVEGAÇÃO
+    // ================================================================
     function mudarSecao(s) {
         const secoes = ['minha-celula', 'celulas', 'biblia', 'agenda', 'palavras', 'sugestao'];
         secoes.forEach(id => { const el = document.getElementById('secao-' + id); if (el) el.classList.add('hidden'); });
@@ -1865,17 +1887,13 @@
         }
     }
 
-    // ============================================================
+    // ================================================================
     //  EVENTOS INICIAIS
-    // ============================================================
+    // ================================================================
     function inicializarEventos() {
-        // Filtros de célula (se houver)
-        document.getElementById('filtroLiderRede')?.addEventListener('change', () => {
-            // implementar se necessário
-        });
-
-        // Formulário de relatório
         document.getElementById('formRelatorioModal').onsubmit = salvarRelatorio;
+        document.getElementById('formCelula').onsubmit = salvarCelula;
+
         document.getElementById('formSugestao').onsubmit = async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSugestao');
@@ -1890,6 +1908,7 @@
                 if (error) throw error;
                 alert("Mensagem enviada com sucesso!");
                 this.reset();
+                await registrarLogAcao(`Enviou pedido de oração/sugestão: ${this.mensagem.value.substring(0, 50)}...`);
             } catch (err) {
                 alert("Erro: " + err.message);
             } finally {
@@ -1899,11 +1918,10 @@
         };
     }
 
-    // ============================================================
+    // ================================================================
     //  INÍCIO
-    // ============================================================
+    // ================================================================
     window.onload = function() {
-        // Inicializar bíblia se disponível
         if (typeof Biblia !== 'undefined') {
             Biblia.inicializar().then(() => {
                 const saved = localStorage.getItem('biblia_versao');
@@ -1912,18 +1930,15 @@
                 document.getElementById('versaoSiglaAtual').innerText = siglasVersoes[versaoSelecionada] || versaoSelecionada;
             });
         }
-        // Carregar dados
         carregarTudo();
     };
 </script>
 
-<!-- ============================================================ -->
+<!-- ================================================================ -->
 <!-- HTML DA PÁGINA -->
-<!-- ============================================================ -->
+<!-- ================================================================ -->
 
 <div class="container">
-
-    <!-- HEADER -->
     <div class="header">
         <div style="display:flex; align-items:center; gap:12px;">
             <img src="logo.png" style="width: 100px; border-radius: 50%;" alt="Logo Kids">
@@ -1935,7 +1950,6 @@
         </div>
     </div>
 
-    <!-- NAVEGAÇÃO -->
     <div class="nav-menu">
         <button id="btn-minha-celula" class="nav-btn active" onclick="mudarSecao('minha-celula')"><i class="fas fa-users"></i> Minha Célula</button>
         <button id="btn-celulas" class="nav-btn" onclick="mudarSecao('celulas')"><i class="fas fa-network-wired"></i> Células</button>
@@ -1985,7 +1999,6 @@
     <!-- ============================================================ -->
     <div id="secao-biblia" class="hidden"></div>
 
-    <!-- Offcanvas Bíblia -->
     <div id="biblia-overlay" onclick="fecharBiblia()"></div>
     <div id="painel-biblia" class="biblia-offcanvas">
         <div class="biblia-header">
@@ -2011,7 +2024,6 @@
         </div>
     </div>
 
-    <!-- Modal Versão -->
     <div id="modalVersao" class="modal-overlay hidden" onclick="fecharModalVersao(event)" style="align-items:center;">
         <div class="modal-content" style="max-width:500px; max-height:80vh; border-radius:20px;" onclick="event.stopPropagation()">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
@@ -2063,26 +2075,24 @@
     </div>
 </div>
 
-<!-- ============================================================ -->
+<!-- ================================================================ -->
 <!-- MODAIS -->
-<!-- ============================================================ -->
+<!-- ================================================================ -->
 
 <!-- Modal da Célula (visualizar membros) -->
-<div id="modalCelula" class="modal-overlay hidden">
-    <div class="modal-content" style="max-height:90vh;">
-        <button class="btn-close-modal" onclick="fecharModalCelula()">&times;</button>
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--primary); padding-bottom:15px; margin-bottom:20px;">
-            <h2 id="modalCelulaTitulo" style="margin:0; color:var(--primary);"></h2>
-        </div>
-        <div id="coliderInfo" style="margin-bottom:15px; padding:8px 15px; background:#f9f5f3; border-radius:8px; font-size:0.9rem; display:none;"></div>
-        <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
-            <button class="btn-card" style="background:var(--success-text); color:white; border-color:var(--success-text);" onclick="abrirModalCadastroMembro()"><i class="fas fa-plus"></i> Nova Criança</button>
-            <button class="btn-card" style="background:#fef3c7; color:#92400e; border-color:#fef3c7;" onclick="abrirApascentar()"><i class="fas fa-hands-praying"></i> Apascentar</button>
-            <button class="btn-card" style="background:#e0e7ff; color:#1e40af; border-color:#e0e7ff;" onclick="abrirModalRelatorio()"><i class="fas fa-clipboard-list"></i> Relatório</button>
-        </div>
-        <div id="gridMembrosCelulaModal" class="member-grid"></div>
-        <input type="hidden" id="cadastroModalCelulaHidden">
+<div id="modalCelula" class="modal-celula-full hidden">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--primary); padding-bottom:15px; margin-bottom:20px;">
+        <h2 id="modalCelulaTitulo" style="margin:0; color:var(--primary);"></h2>
+        <button class="btn-close-modal" onclick="fecharModalCelula()" style="position:static;">&times;</button>
     </div>
+    <div id="coliderInfo" style="margin-bottom:15px; padding:8px 15px; background:#f9f5f3; border-radius:8px; font-size:0.9rem; display:none;"></div>
+    <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+        <button class="btn-card" style="background:var(--success-text); color:white; border-color:var(--success-text);" onclick="abrirModalCadastroMembro()"><i class="fas fa-plus"></i> Nova Criança</button>
+        <button class="btn-card" style="background:#fef3c7; color:#92400e; border-color:#fef3c7;" onclick="abrirApascentar()"><i class="fas fa-hands-praying"></i> Apascentar</button>
+        <button class="btn-card" style="background:#e0e7ff; color:#1e40af; border-color:#e0e7ff;" onclick="abrirModalRelatorio()"><i class="fas fa-clipboard-list"></i> Relatório</button>
+    </div>
+    <div id="gridMembrosCelulaModal" class="member-grid"></div>
+    <input type="hidden" id="cadastroModalCelulaHidden">
 </div>
 
 <!-- Modal Cadastro de Criança -->
