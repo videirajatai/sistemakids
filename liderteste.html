@@ -1111,6 +1111,8 @@
     let dadosTodasCelulas = [];
     let mapaNomes = {};
     let dadosMembros = [];
+    let listaAnotacoes = [];
+    let meuAuthId = null; 
 
     // ================================================================
     //  AUTENTICAÇÃO E CARREGAMENTO INICIAL
@@ -2451,10 +2453,10 @@
         }
 
     
-        // Formulário de anotação
         const formAnot = document.getElementById('formAnotacao');
-        if (formAnot) formAnot.onsubmit = salvarAnotacao;
-    }
+            if (formAnot) {
+                formAnot.onsubmit = salvarAnotacao;
+            }
 
   // ================================================================
   //  ANOTAÇÕES (PESSOAIS, PRIVADAS)
@@ -2462,137 +2464,155 @@
   let listaAnotacoes = [];
   
   async function carregarAnotacoes() {
-      const div = document.getElementById('listaAnotacoes');
-      div.innerHTML = '<p style="text-align:center; color:#999;">Carregando...</p>';
-      // RLS garante que só retorna anotações do próprio usuário (auth.uid)
-      const { data, error } = await supabaseClient
-          .from('rk_anotacoes')
-          .select('*')
-          .order('atualizado_em', { ascending: false });
-      if (error) {
-          div.innerHTML = `<p style="text-align:center; color:var(--danger-text);">Erro: ${error.message}</p>`;
-          return;
-      }
-      listaAnotacoes = data || [];
-      renderizarAnotacoes();
-  }
-  
-  function renderizarAnotacoes() {
-      const div = document.getElementById('listaAnotacoes');
-      div.innerHTML = '';
-      if (!listaAnotacoes.length) {
-          div.innerHTML = '<p style="text-align:center; color:#999;">Nenhuma anotação. Crie a primeira!</p>';
-          return;
-      }
-      listaAnotacoes.forEach(a => {
-          const data = a.atualizado_em ? new Date(a.atualizado_em).toLocaleString('pt-BR') : '';
-          const preview = (a.conteudo || '').length > 140 ? a.conteudo.substring(0, 140) + '...' : (a.conteudo || '');
-          const cor = a.cor || '#f8f9fa';
-          const titulo = a.titulo || 'Sem título';
-          const divCard = document.createElement('div');
-          divCard.className = 'member-card';
-          divCard.style.borderLeft = `4px solid ${cor}`;
-          divCard.innerHTML = `
-              <div class="card-header">
-                  <h4 class="card-name">${escaparHTML(titulo)}</h4>
-                  <div class="card-actions">
-                      <button onclick="abrirEditarAnotacao('${a.id}')" class="btn-card"><i class="fas fa-edit"></i></button>
-                      <button onclick="excluirAnotacao('${a.id}')" class="btn-card" style="color:var(--danger-text);"><i class="fas fa-trash"></i></button>
-                  </div>
-              </div>
-              <div style="font-size:0.9rem; margin-top:4px; white-space:pre-wrap;">${escaparHTML(preview)}</div>
-              <div class="card-info" style="font-size:0.7rem; color:#999; margin-top:6px;">
-                  <i class="far fa-clock"></i> ${data}
-              </div>
-          `;
-          div.appendChild(divCard);
-      });
-  }
+    const div = document.getElementById('listaAnotacoes');
+    div.innerHTML = '<p style="text-align:center; color:#999;">Carregando...</p>';
+    
+    // Usamos a tabela rk_anotacoes, com filtro por usuario_id (auth.uid)
+    const { data, error } = await supabaseClient
+        .from('rk_anotacoes')
+        .select('*')
+        .order('atualizado_em', { ascending: false });
+
+    if (error) {
+        div.innerHTML = `<p style="text-align:center; color:#b34a4a;">Erro ao carregar: ${error.message}</p>`;
+        return;
+    }
+    listaAnotacoes = data || [];
+    renderizarAnotacoes();
+}
+
+function renderizarAnotacoes() {
+    const div = document.getElementById('listaAnotacoes');
+    div.innerHTML = '';
+    if (listaAnotacoes.length === 0) {
+        div.innerHTML = '<p style="text-align:center; color:#999;">Nenhuma anotação ainda. Crie a sua primeira!</p>';
+        return;
+    }
+    listaAnotacoes.forEach(a => {
+        const dataF = a.atualizado_em ? new Date(a.atualizado_em).toLocaleString('pt-BR') : '';
+        const preview = (a.conteudo || '').length > 120 ? a.conteudo.substring(0, 120) + '...' : (a.conteudo || '');
+        div.innerHTML += `
+            <div class="member-card">
+                <div class="card-header">
+                    <h4 class="card-name">${escaparHTML(a.titulo)}</h4>
+                    <div class="card-actions">
+                        <button onclick="abrirEditarAnotacao('${a.id}')" class="btn-card"><i class="fas fa-edit"></i></button>
+                        <button onclick="excluirAnotacao('${a.id}')" class="btn-card" style="color:var(--danger-text);"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>
+                <div class="card-info" style="white-space:pre-wrap; display:block;">${escaparHTML(preview)}</div>
+                <div class="card-info"><i class="far fa-clock"></i> ${dataF}</div>
+            </div>`;
+    });
+}
   
   function abrirNovaAnotacao() {
-      document.getElementById('formAnotacao').reset();
-      document.getElementById('anotacaoId').value = '';
-      document.getElementById('tituloModalAnotacao').innerText = 'Nova Anotação';
-      document.getElementById('modalAnotacao').classList.remove('hidden');
-  }
-  
-  function abrirEditarAnotacao(id) {
-      const a = listaAnotacoes.find(x => x.id === id);
-      if (!a) { alert('Anotação não encontrada.'); return; }
-      document.getElementById('anotacaoId').value = a.id;
-      document.getElementById('anotacaoTitulo').value = a.titulo || '';
-      document.getElementById('anotacaoConteudo').value = a.conteudo || '';
-      document.getElementById('anotacaoCor').value = a.cor || '#f8f9fa';
-      document.getElementById('tituloModalAnotacao').innerText = 'Editar Anotação';
-      document.getElementById('modalAnotacao').classList.remove('hidden');
-  }
-  
-  function fecharModalAnotacao() {
-      document.getElementById('modalAnotacao').classList.add('hidden');
-  }
-  
-  function fecharModalAnotacaoClique(e) {
-      if (e.target.classList.contains('modal-overlay')) fecharModalAnotacao();
-  }
-  
-  async function salvarAnotacao(e) {
-      e.preventDefault();
-      const btn = document.getElementById('btnSalvarAnotacao');
-      btn.disabled = true;
-      const id = document.getElementById('anotacaoId').value;
-      const titulo = document.getElementById('anotacaoTitulo').value.trim();
-      const conteudo = document.getElementById('anotacaoConteudo').value.trim();
-      const cor = document.getElementById('anotacaoCor').value || '#f8f9fa';
-      if (!titulo) {
-          alert('O título é obrigatório.');
-          btn.disabled = false;
-          return;
-      }
-      if (!conteudo) {
-          alert('O conteúdo não pode estar vazio.');
-          btn.disabled = false;
-          return;
-      }
-      try {
-          if (id) {
-              const { error } = await supabaseClient
-                  .from('rk_anotacoes')
-                  .update({ titulo, conteudo, cor })
-                  .eq('id', id);
-              if (error) throw error;
-              await registrarLogAcao(`Editou anotação "${titulo}"`);
-          } else {
-              const { error } = await supabaseClient
-                  .from('rk_anotacoes')
-                  .insert([{ titulo, conteudo, cor, usuario_id: meuAuthId }]);
-              if (error) throw error;
-              await registrarLogAcao(`Criou anotação "${titulo}"`);
-          }
-          fecharModalAnotacao();
-          await carregarAnotacoes();
-      } catch (err) {
-          alert('Erro ao salvar anotação: ' + err.message);
-      } finally {
-          btn.disabled = false;
-      }
-  }
-  
-  async function excluirAnotacao(id) {
-      const a = listaAnotacoes.find(x => x.id === id);
-      const titulo = a ? a.titulo : '';
-      if (!confirm(`Excluir a anotação "${titulo}"?`)) return;
-      try {
-          const { error } = await supabaseClient
-              .from('rk_anotacoes')
-              .delete()
-              .eq('id', id);
-          if (error) throw error;
-          await registrarLogAcao(`Excluiu anotação "${titulo}"`);
-          await carregarAnotacoes();
-      } catch (err) {
-          alert('Erro ao excluir: ' + err.message);
-      }
-  }
+    document.getElementById('anotacaoId').value = '';
+    document.getElementById('anotacaoTitulo').value = '';
+    document.getElementById('anotacaoConteudo').value = '';
+    document.getElementById('tituloModalAnotacao').innerText = 'Nova Anotação';
+    document.getElementById('modalAnotacao').classList.remove('hidden');
+}
+
+function abrirEditarAnotacao(id) {
+    const a = listaAnotacoes.find(x => x.id === id);
+    if (!a) return;
+    document.getElementById('anotacaoId').value = a.id;
+    document.getElementById('anotacaoTitulo').value = a.titulo || '';
+    document.getElementById('anotacaoConteudo').value = a.conteudo || '';
+    document.getElementById('tituloModalAnotacao').innerText = 'Editar Anotação';
+    document.getElementById('modalAnotacao').classList.remove('hidden');
+}
+
+function fecharModalAnotacao() {
+    document.getElementById('modalAnotacao').classList.add('hidden');
+}
+
+function fecharModalAnotacaoClique(e) {
+    if (e.target.classList.contains('modal-overlay')) fecharModalAnotacao();
+}
+
+async function salvarAnotacao(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSalvarAnotacao');
+    btn.disabled = true;
+    btn.innerText = 'Salvando...';
+
+    const id = document.getElementById('anotacaoId').value;
+    const titulo = document.getElementById('anotacaoTitulo').value.trim();
+    const conteudo = document.getElementById('anotacaoConteudo').value.trim();
+
+    if (!titulo) {
+        alert('Informe um título para a anotação.');
+        btn.disabled = false;
+        btn.innerText = 'Salvar';
+        return;
+    }
+
+    try {
+        // Usamos o auth.uid() via RLS, mas precisamos passar o usuario_id (auth.uid) explicitamente
+        // na inserção. Como a RLS usa auth.uid(), podemos omitir o campo usuario_id na inserção
+        // ou passá-lo explicitamente. Vamos passar explicitamente para garantir.
+        const usuarioId = sessionStorage.getItem('authUserId') || meuAuthId;
+        if (!usuarioId) {
+            alert('Usuário não autenticado.');
+            btn.disabled = false;
+            btn.innerText = 'Salvar';
+            return;
+        }
+
+        if (id) {
+            // Edição
+            const { error } = await supabaseClient
+                .from('rk_anotacoes')
+                .update({
+                    titulo: titulo,
+                    conteudo: conteudo
+                })
+                .eq('id', id);
+            if (error) throw error;
+            await registrarLogAcao(`Editou anotação: "${titulo}"`);
+        } else {
+            // Nova
+            const { error } = await supabaseClient
+                .from('rk_anotacoes')
+                .insert([
+                    {
+                        titulo: titulo,
+                        conteudo: conteudo,
+                        usuario_id: usuarioId  // explícito
+                    }
+                ]);
+            if (error) throw error;
+            await registrarLogAcao(`Criou anotação: "${titulo}"`);
+        }
+        fecharModalAnotacao();
+        await carregarAnotacoes();
+    } catch (err) {
+        alert('Erro ao salvar anotação: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'Salvar';
+    }
+}
+
+async function excluirAnotacao(id) {
+    const a = listaAnotacoes.find(x => x.id === id);
+    const titulo = a ? a.titulo : '';
+    if (!confirm(`Excluir anotação "${titulo}"?`)) return;
+    try {
+        const { error } = await supabaseClient
+            .from('rk_anotacoes')
+            .delete()
+            .eq('id', id);
+        if (error) throw error;
+        await registrarLogAcao(`Excluiu anotação: "${titulo}"`);
+        await carregarAnotacoes();
+    } catch (err) {
+        alert('Erro ao excluir: ' + err.message);
+    }
+}
+
 </script>
 
 </body>
