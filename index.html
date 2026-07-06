@@ -192,131 +192,7 @@
             return (cat || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         }
 
-       /* async function verificarLogin() {
-            const entrada = document.getElementById('usuario-input').value.trim().toLowerCase();
-            const senhaDigitada = document.getElementById('senha-input').value.trim();
-            const erro = document.getElementById('mensagem-erro');
-            const btn = document.getElementById('btn-entrar');
-        
-            if(!entrada || !senhaDigitada) { 
-                erro.innerText = "⚠️ Preencha usuário/e-mail e senha."; 
-                erro.style.display = 'block'; 
-                return; 
-            }
-        
-            btn.innerText = "Autenticando..."; 
-            btn.disabled = true; 
-            erro.style.display = 'none';
-        
-            let emailParaLogin = entrada;
-            if (!entrada.includes('@')) {
-                const { data, error } = await supabaseClient
-                    .from('rk_pessoas')
-                    .select('email')
-                    .eq('usuario', entrada)
-                    .maybeSingle();
-                if (error || !data) {
-                    erro.innerText = "⚠️ Usuário não encontrado.";
-                    erro.style.display = 'block';
-                    btn.innerText = "Entrar no Sistema"; 
-                    btn.disabled = false;
-                    return;
-                }
-                emailParaLogin = data.email;
-            }
-        
-            const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({
-                email: emailParaLogin,
-                password: senhaDigitada
-            });
-        
-            if (loginError) {
-                erro.innerText = "⚠️ E-mail ou senha incorretos.";
-                erro.style.display = 'block';
-                document.getElementById('senha-input').value = "";
-                btn.innerText = "Entrar no Sistema"; 
-                btn.disabled = false;
-                return;
-            }
-        
-            const { data: pessoa } = await supabaseClient
-                .from('rk_pessoas')
-                .select('nome, categoria')
-                .eq('email', emailParaLogin)
-                .single();
-        
-            if (!pessoa) {
-                erro.innerText = "⚠️ Registro não encontrado na base de dados.";
-                erro.style.display = 'block';
-                btn.innerText = "Entrar no Sistema"; 
-                btn.disabled = false;
-                return;
-            }
-        
-            const nomeReal = pessoa.nome;
-            const categoriaNormalizada = normalizarCategoria(pessoa.categoria);
-        
-            // Registrar log
-            registrarLog(entrada, nomeReal, "Fez login no sistema");
-        
-            // Salvar informações na sessão
-            sessionStorage.setItem('usuarioLogado', nomeReal);
-            sessionStorage.setItem('loginDigitado', emailParaLogin);
-            sessionStorage.setItem('urlApi', urlBackend);
-            sessionStorage.setItem('categoria', categoriaNormalizada);
-        
-            // Redirecionamento conforme categoria (MANTIDO IGUAL AO ORIGINAL)
-            let paginas = [];
-            if (categoriaNormalizada === 'administrador') {
-                paginas = [
-                    { nome: "Painel Admin", url: "admin" },
-                    { nome: "Painel Pastoral", url: "pastor" },
-                    { nome: "Painel Discipulador", url: "discipulador" },
-                    { nome: "Painel do Líder", url: "lider" },
-                    { nome: "Financeiro PC", url: "financeiro" },
-                    { nome: "Financeiro Mobile", url: "financeiromobile" },
-                    { nome: "Área do Membro", url: "membro" }
-                ];
-            } else if (['pastor de governo', 'pastor de rede', 'pastor'].includes(categoriaNormalizada)) {
-                paginas = [{ nome: "Painel Pastoral", url: "pastor" }];
-            } else if (categoriaNormalizada === 'discipulador') {
-                paginas = [{ nome: "Painel Discipulador", url: "discipulador" }];
-            } else if (categoriaNormalizada === 'líder' || categoriaNormalizada === 'lider') {
-                paginas = [{ nome: "Painel do Líder", url: "lider" }];
-            } else if (categoriaNormalizada === 'tesoureiro') {
-                paginas = [
-                    { nome: "Financeiro PC", url: "financeiro" },
-                    { nome: "Financeiro Mobile", url: "financeiromobile" }
-                ];
-            } else if (categoriaNormalizada === 'membro') {
-                paginas = [{ nome: "Área do Membro", url: "membro" }];
-            } else {
-                // Fallback
-                paginas = [{ nome: "Área do Membro", url: "membro" }];
-            }
-        
-            const urlsPermitidas = paginas.map(p => p.url);
-            sessionStorage.setItem('paginasPermitidas', JSON.stringify(urlsPermitidas));
-        
-            if (paginas.length === 1) {
-                entrarNoPainel(nomeReal, paginas[0].url);
-            } else {
-                document.getElementById('area-form').style.display = 'none';
-                document.getElementById('area-escolha').style.display = 'block';
-                document.getElementById('titulo-login').innerText = `Olá, ${nomeReal}`;
-                document.getElementById('subtitulo-login').innerText = "Escolha o painel:";
-        
-                const divBotoes = document.getElementById('botoes-painel');
-                divBotoes.innerHTML = '';
-                paginas.forEach(pag => {
-                    let b = document.createElement('button');
-                    b.innerText = pag.nome;
-                    b.onclick = () => entrarNoPainel(nomeReal, pag.url);
-                    divBotoes.appendChild(b);
-                });
-            }
-        }*/
-
+     
         async function verificarLogin() {
             const entrada = document.getElementById('usuario-input').value.trim().toLowerCase();
             const senhaDigitada = document.getElementById('senha-input').value.trim();
@@ -400,10 +276,10 @@
                     { nome: "Painel Admin", url: "admin" },
                     { nome: "Painel Pastoral", url: "pastor" },
                     { nome: "Painel Discipulador", url: "discipulador" },
-                    { nome: "Painel do Líder", url: "lider" },
-                    { nome: "Financeiro PC", url: "financeiro" },
-                    { nome: "Financeiro Mobile", url: "financeiromobile" },
-                    { nome: "Área do Membro", url: "membro" }
+                    { nome: "Painel do Líder", url: "lider" }
+                   // { nome: "Financeiro PC", url: "financeiro" },
+                   // { nome: "Financeiro Mobile", url: "financeiromobile" },
+                   // { nome: "Área do Membro", url: "membro" }
                 ];
             } else if (['pastor de governo', 'pastor de rede', 'pastor'].includes(categoriaNormalizada)) {
                 paginas = [{ nome: "Painel Pastoral", url: "pastor" }];
