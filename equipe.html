@@ -593,17 +593,40 @@
         }
 
         // ==================== INICIALIZAÇÃO ====================
-        async function init() {
+       async function init() {
             try {
                 const { data: { user }, error } = await supabaseClient.auth.getUser();
                 if (error || !user) {
                     window.location.href = 'index.html';
                     return;
                 }
+                // Verifica se o perfil existe, se não, cria
+                const { data: profile, error: profileError } = await supabaseClient
+                    .from('kids_profiles')
+                    .select('id, role')
+                    .eq('id', user.id)
+                    .maybeSingle();
+                if (profileError || !profile) {
+                    // Cria perfil staff
+                    const { error: insertError } = await supabaseClient
+                        .from('kids_profiles')
+                        .insert({ id: user.id, role: 'staff' });
+                    if (insertError) {
+                        console.error('Erro ao criar perfil staff:', insertError);
+                        showToast('Erro ao configurar perfil. Contate o suporte.', 'error');
+                        return;
+                    }
+                    showToast('Perfil staff criado automaticamente.', 'info');
+                } else if (profile.role !== 'staff') {
+                    // Se existir mas não for staff, atualiza para staff
+                    await supabaseClient.from('kids_profiles')
+                        .update({ role: 'staff' })
+                        .eq('id', user.id);
+                    showToast('Perfil atualizado para staff.', 'info');
+                }
                 currentStaffId = user.id;
                 await loadSessions();
                 setupTabs();
-                // Event listeners para os botões do modal de sala
                 document.querySelectorAll('.room-option').forEach(btn => {
                     btn.addEventListener('click', () => {
                         const room = btn.dataset.room;
@@ -615,7 +638,6 @@
                 showToast('Erro ao inicializar. Recarregue a página.', 'error');
             }
         }
-
         // ==================== SESSÕES ====================
         async function loadSessions() {
             try {
