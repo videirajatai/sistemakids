@@ -598,6 +598,9 @@
         let pendingRoom = null;
         let childrenForRoom = [];
 
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+        const API_URL = sessionStorage.getItem('urlApi');
+
         // ========== TOAST ==========
         function showToast(message, type = 'info') {
             const existingToast = document.querySelector('.toast');
