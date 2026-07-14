@@ -2539,14 +2539,14 @@ async function salvarAnotacao(e) {
     try {
         if (id) {
             const { error } = await supabaseClient
-                .from('anotacoes')
+                .from('rk_anotacoes')
                 .update({ titulo, conteudo })
                 .eq('id', id);
             if (error) throw error;
             await registrarLogAcao(`Editou a anotação "${titulo}"`);
         } else {
             const { error } = await supabaseClient
-                .from('anotacoes')
+                .from('rk_anotacoes')
                 .insert([{ titulo, conteudo, usuario_id: meuAuthId }]);
             if (error) throw error;
             await registrarLogAcao(`Criou a anotação "${titulo}"`);
@@ -2565,7 +2565,7 @@ async function excluirAnotacao(id) {
     const titulo = a ? a.titulo : '';
     if (!confirm(`Excluir a anotação "${titulo}"? Essa ação não pode ser desfeita.`)) return;
     try {
-        const { error } = await supabaseClient.from('anotacoes').delete().eq('id', id);
+        const { error } = await supabaseClient.from('rk_anotacoes').delete().eq('id', id);
         if (error) throw error;
         await registrarLogAcao(`Excluiu a anotação "${titulo}"`);
         await carregarAnotacoes();
