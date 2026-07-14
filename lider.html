@@ -1136,7 +1136,7 @@
 
         await carregarTudo();
         inicializarEventos();
-        carregarAnotacoes();
+        await carregarAnotacoes();
         meuAuthId = user.id;
         sessionStorage.setItem('authUserId', user.id);
 
@@ -2462,7 +2462,7 @@ async function carregarAnotacoes() {
     const div = document.getElementById('listaAnotacoes');
     div.innerHTML = '<p style="text-align:center; color:#999;">Carregando...</p>';
     const { data, error } = await supabaseClient
-        .from('anotacoes')
+        .from('rk_anotacoes')
         .select('*')
         .order('atualizado_em', { ascending: false });
     if (error) {
