@@ -749,7 +749,21 @@
             </form>
         </div>
     </div>
-</div>
+
+    <!-- ============================================================ -->
+    <!-- ABA ANOTAÇÕES -->
+    <!-- ============================================================ -->
+    <div id="secao-anotacoes" class="hidden">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h4 style="margin:0; color: var(--primary);"><i class="fas fa-note-sticky"></i> Anotações Pessoais</h4>
+            <button onclick="abrirNovaAnotacao()" class="btn-action" style="background:var(--success-text); color:white;">
+                <i class="fas fa-plus"></i> Nova
+            </button>
+        </div>
+        <p style="font-size:0.8rem; color:var(--text-light); margin-bottom:15px;"><i class="fas fa-lock"></i>  Suas anotações são privadas e visíveis apenas para você.</p>
+        <div id="listaAnotacoes" class="member-grid"></div>
+    </div>    
+</div> <!-- fechamento do container -->
 
 <!-- ================================================================ -->
 <!-- MODAIS -->
@@ -1040,6 +1054,24 @@
     </div>
 </div>
 
+
+<!-- modalAnotacao (nova/editar anotação pessoal) -->
+<div id="modalAnotacao" class="modal-overlay hidden" onclick="fecharModalAnotacaoClique(event)" style="align-items: center;">
+    <div class="modal-content" style="max-width:600px; height:auto; max-height:90vh; border-radius:20px;" onclick="event.stopPropagation()">
+        <button class="btn-close-modal" onclick="fecharModalAnotacao()">&times;</button>
+        <h3 id="tituloModalAnotacao" style="color:var(--primary); margin-top:0;">Nova Anotação</h3>
+        <form id="formAnotacao">
+            <input type="hidden" id="anotacaoId">
+            <label>Título</label>
+            <input type="text" id="anotacaoTitulo" required placeholder="Ex: Conversa com fulano">
+            <label>Anotação</label>
+            <textarea id="anotacaoConteudo" rows="8" placeholder="Escreva aqui sua anotação pessoal..."></textarea>
+            <button type="submit" class="btn-save" id="btnSalvarAnotacao">Salvar</button>
+        </form>
+    </div>
+</div>
+    
+
 <!-- ================================================================ -->
 <!-- SCRIPT (movido para o final do body — corrige o bug principal:   -->
 <!-- antes, o script rodava ANTES do HTML existir no DOM e travava)   -->
@@ -1068,6 +1100,8 @@
     let dadosTodasCelulas = [];
     let mapaNomes = {};
     let dadosMembros = [];
+    let listaAnotacoes = [];
+    let meuAuthId = null;
 
     // ================================================================
     //  AUTENTICAÇÃO E CARREGAMENTO INICIAL
@@ -1102,6 +1136,8 @@
 
         await carregarTudo();
         inicializarEventos();
+        meuAuthId = user.id;
+        sessionStorage.setItem('authUserId', user.id);
 
         if (typeof Biblia !== 'undefined') {
             Biblia.inicializar().then(() => {
@@ -2148,13 +2184,23 @@
     // ================================================================
     //  NAVEGAÇÃO
     // ================================================================
-    function mudarSecao(s) {
-        const secoes = ['minha-celula', 'celulas', 'biblia', 'agenda', 'palavras', 'sugestao'];
+   /* function mudarSecao(s) {
+        const secoes = ['minha-celula', 'celulas', 'biblia', 'agenda', 'palavras', 'sugestao','anotacoes'];
         secoes.forEach(id => { const el = document.getElementById('secao-' + id); if (el) el.classList.add('hidden'); });
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         const secao = document.getElementById('secao-' + s); if (secao) secao.classList.remove('hidden');
         const btn = document.getElementById('btn-' + s); if (btn) btn.classList.add('active');
         if (s === 'biblia') abrirBiblia();
+    }*/
+
+    function mudarSecao(s) {
+        const secoes = ['minha-celula','celulas','biblia','agenda','palavras','sugestao','anotacoes'];
+        secoes.forEach(id => { const el = document.getElementById('secao-'+id); if(el) el.classList.add('hidden'); });
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        const secao = document.getElementById('secao-'+s); if(secao) secao.classList.remove('hidden');
+        const btn = document.getElementById('btn-'+s); if(btn) btn.classList.add('active');
+        if (s === 'biblia') abrirBiblia();
+        if (s === 'anotacoes') carregarAnotacoes();
     }
 
     function fazerLogout() {
@@ -2396,7 +2442,136 @@
         } else {
             console.warn('Elemento formPromoverMembro não encontrado');
         }
+        const formAnot = document.getElementById('formAnotacao');
+        if (formAnot) formAnot.onsubmit = salvarAnotacao;
     }
+
+function escaparHTML(str) {
+   if (!str) return '';
+   return String(str)
+       .replace(/&/g, '&amp;')
+       .replace(/</g, '&lt;')
+       .replace(/>/g, '&gt;')
+       .replace(/'/g, '&#39;')
+       .replace(/"/g, '&quot;');
+}
+
+// ==================== FUNÇÕES DE ANOTAÇÕES ====================
+async function carregarAnotacoes() {
+    const div = document.getElementById('listaAnotacoes');
+    div.innerHTML = '<p style="text-align:center; color:#999;">Carregando...</p>';
+    const { data, error } = await supabaseClient
+        .from('anotacoes')
+        .select('*')
+        .order('atualizado_em', { ascending: false });
+    if (error) {
+        div.innerHTML = `<p style="text-align:center; color:#991b1b;">Erro ao carregar anotações: ${error.message}</p>`;
+        return;
+    }
+    listaAnotacoes = data || [];
+    renderizarAnotacoes();
+}
+
+function renderizarAnotacoes() {
+    const div = document.getElementById('listaAnotacoes');
+    div.innerHTML = '';
+    if (!listaAnotacoes.length) {
+        div.innerHTML = '<p style="text-align:center; color:#999;">Nenhuma anotação cadastrada.</p>';
+        return;
+    }
+    listaAnotacoes.forEach(a => {
+        const dataF = a.atualizado_em ? new Date(a.atualizado_em).toLocaleString('pt-BR') : '';
+        const preview = (a.conteudo || '').length > 140 ? a.conteudo.substring(0, 140) + '...' : (a.conteudo || '');
+        div.innerHTML += `
+            <div class="member-card">
+                <div class="card-header">
+                    <h4 class="card-name">${escaparHTML(a.titulo)}</h4>
+                </div>
+                <div class="card-info" style="white-space:pre-wrap; display:block;">${escaparHTML(preview)}</div>
+                <div class="card-info"><i class="far fa-clock"></i> Atualizado em ${dataF}</div>
+                <div class="card-actions">
+                    <button onclick="abrirEditarAnotacao('${a.id}')" class="btn-action btn-edit"><i class="fas fa-edit"></i> Editar</button>
+                    <button onclick="excluirAnotacao('${a.id}')" class="btn-action btn-archive"><i class="fas fa-trash"></i> Excluir</button>
+                </div>
+            </div>`;
+    });
+}
+
+function abrirNovaAnotacao() {
+    document.getElementById('anotacaoId').value = '';
+    document.getElementById('anotacaoTitulo').value = '';
+    document.getElementById('anotacaoConteudo').value = '';
+    document.getElementById('tituloModalAnotacao').innerText = 'Nova Anotação';
+    document.getElementById('modalAnotacao').classList.remove('hidden');
+}
+
+function abrirEditarAnotacao(id) {
+    const a = listaAnotacoes.find(x => x.id === id);
+    if (!a) return;
+    document.getElementById('anotacaoId').value = a.id;
+    document.getElementById('anotacaoTitulo').value = a.titulo || '';
+    document.getElementById('anotacaoConteudo').value = a.conteudo || '';
+    document.getElementById('tituloModalAnotacao').innerText = 'Editar Anotação';
+    document.getElementById('modalAnotacao').classList.remove('hidden');
+}
+
+function fecharModalAnotacao() {
+    document.getElementById('modalAnotacao').classList.add('hidden');
+}
+
+function fecharModalAnotacaoClique(e) {
+    if (e.target.classList.contains('modal-overlay')) fecharModalAnotacao();
+}
+
+async function salvarAnotacao(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSalvarAnotacao');
+    btn.disabled = true;
+    const id = document.getElementById('anotacaoId').value;
+    const titulo = document.getElementById('anotacaoTitulo').value.trim();
+    const conteudo = document.getElementById('anotacaoConteudo').value.trim();
+    if (!titulo) {
+        alert("Informe um título para a anotação.");
+        btn.disabled = false;
+        return;
+    }
+    try {
+        if (id) {
+            const { error } = await supabaseClient
+                .from('anotacoes')
+                .update({ titulo, conteudo })
+                .eq('id', id);
+            if (error) throw error;
+            await registrarLogAcao(`Editou a anotação "${titulo}"`);
+        } else {
+            const { error } = await supabaseClient
+                .from('anotacoes')
+                .insert([{ titulo, conteudo, usuario_id: meuAuthId }]);
+            if (error) throw error;
+            await registrarLogAcao(`Criou a anotação "${titulo}"`);
+        }
+        fecharModalAnotacao();
+        await carregarAnotacoes();
+    } catch (err) {
+        alert("Erro ao salvar anotação: " + err.message);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function excluirAnotacao(id) {
+    const a = listaAnotacoes.find(x => x.id === id);
+    const titulo = a ? a.titulo : '';
+    if (!confirm(`Excluir a anotação "${titulo}"? Essa ação não pode ser desfeita.`)) return;
+    try {
+        const { error } = await supabaseClient.from('anotacoes').delete().eq('id', id);
+        if (error) throw error;
+        await registrarLogAcao(`Excluiu a anotação "${titulo}"`);
+        await carregarAnotacoes();
+    } catch (err) {
+        alert("Erro ao excluir anotação: " + err.message);
+    }
+}
 </script>
 
 </body>
