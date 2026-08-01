@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
+    <!-- Módulo unificado da Bíblia -->
+    <script src="js/biblia.js"></script>
 
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
@@ -56,6 +58,86 @@
             box-shadow: var(--shadow);
             margin-bottom: 20px;
             border-left: 5px solid var(--primary);
+            flex-wrap: wrap;
+        }
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .header-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            border-top: 1px solid rgba(139, 90, 106, 0.15);
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+        /* --- Player Vinha FM (discreto, no header) --- */
+        .radio-player-mini {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .radio-btn {
+            background: transparent;
+            border: 1px solid var(--primary);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--primary);
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+        .radio-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+        .radio-btn.playing {
+            border-color: #1E88E5;
+            color: #1E88E5;
+            animation: pulse-radio 1.5s infinite;
+        }
+        @keyframes pulse-radio {
+            0% { box-shadow: 0 0 0 0 rgba(30, 136, 229, 0.3); }
+            70% { box-shadow: 0 0 0 6px rgba(30, 136, 229, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(30, 136, 229, 0); }
+        }
+        .radio-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            font-weight: 500;
+            user-select: none;
+        }
+        /* --- Botão Bíblia no header --- */
+        .btn-biblia-header {
+            background: transparent;
+            border: 1px solid var(--primary);
+            border-radius: 20px;
+            padding: 4px 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary);
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: 'Inter', sans-serif;
+            height: 32px;
+        }
+        .btn-biblia-header:hover {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-biblia-header i {
+            font-size: 0.9rem;
         }
         .header h3 {
             margin: 0;
@@ -621,13 +703,30 @@
 <!-- ================================================================ -->
 <div class="container">
     <div class="header">
-        <div style="display:flex; align-items:center; gap:12px;">
-            <img src="logo.png" style="width: 100px; border-radius: 50%;" alt="Logo Kids">
-            <h3>Rede Kids • Líder</h3>
+        <div class="header-top">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <img src="logo.png" style="width: 100px; border-radius: 50%;" alt="Logo Kids">
+                <h3>Rede Kids • Líder</h3>
+            </div>
+            <div>
+                <button onclick="carregarTudo()" class="btn-refresh"><i id="iconRefresh" class="fas fa-sync-alt"></i></button>
+                <button onclick="fazerLogout()" class="btn-refresh" style="color:var(--danger-text);"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
         </div>
-        <div>
-            <button onclick="carregarTudo()" class="btn-refresh"><i id="iconRefresh" class="fas fa-sync-alt"></i></button>
-            <button onclick="fazerLogout()" class="btn-refresh" style="color:var(--danger-text);"><i class="fas fa-sign-out-alt"></i></button>
+
+        <div class="header-bottom">
+            <!-- Lado esquerdo: player da rádio -->
+            <div class="radio-player-mini">
+                <button id="radioToggle" class="radio-btn" onclick="toggleRadio()" title="Vinha FM">
+                    <i id="radioIcon" class="fas fa-play"></i>
+                </button>
+                <span class="radio-label">Vinha FM</span>
+            </div>
+
+            <!-- Lado direito: botão da Bíblia -->
+            <button class="btn-biblia-header" onclick="abrirBiblia()" title="Abrir Bíblia">
+                <i class="fas fa-bible"></i> Bíblia
+            </button>
         </div>
     </div>
 
@@ -679,7 +778,7 @@
     <!-- ============================================================ -->
     <!-- ABA BÍBLIA (offcanvas) -->
     <!-- ============================================================ -->
-    <!--<div id="secao-biblia" class="hidden"></div>
+    <div id="secao-biblia" class="hidden"></div>
 
     <div id="biblia-overlay" onclick="fecharBiblia()"></div>
     <div id="painel-biblia" class="biblia-offcanvas">
@@ -714,7 +813,7 @@
             </div>
             <div class="versao-lista" id="listaVersoes"></div>
         </div>
-    </div>-->
+    </div>
 
     <!-- ============================================================ -->
     <!-- ABA AGENDA -->
@@ -1266,9 +1365,9 @@
                 renderizarAgenda(listaAgenda);
             } catch(e) { renderizarAgenda([]); }
 
-            // 7. Palavras
+            // 7. Palavras (mesma fonte do sistema de adultos - tabela 'palavras')
             const { data: palavras, error: palError } = await supabaseClient
-                .from('rk_palavras')
+                .from('palavras')
                 .select('*')
                 .order('data', { ascending: false });
             if (palError) throw palError;
@@ -1962,6 +2061,7 @@
         input.select();
         document.execCommand('copy');
         alert('Link copiado!');
+        registrarLogAcao('Copiou Link de Novo Líder');
     }
 
     // ================================================================
@@ -2033,6 +2133,7 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        registrarLogAcao(`Baixou a palavra "${titulo}" (${dataFormatada})`);
     }
 
     // ================================================================
@@ -2094,7 +2195,7 @@
     // ================================================================
     //  BÍBLIA (offcanvas)
     // ================================================================
-    /*let versaoSelecionada = localStorage.getItem('biblia_versao') || 'msg';
+    let versaoSelecionada = localStorage.getItem('biblia_versao') || 'msg';
     const siglasVersoes = { msg:'MSG', nvi:'NVI', aa:'ARA', acf:'ACF', ntlh:'NTLH' };
     const nomesCompletos = {
         msg: 'A Mensagem',
@@ -2110,6 +2211,7 @@
         setTimeout(() => document.getElementById('biblia-overlay').style.opacity = '1', 10);
         if (typeof Biblia !== 'undefined') {
             if (!Biblia.bibliaCarregada) await Biblia.inicializar();
+            registrarLogAcao('Abriu a bíblia');
             versaoSelecionada = Biblia.getVersaoAtiva();
             document.getElementById('versaoSiglaAtual').innerText = siglasVersoes[versaoSelecionada] || versaoSelecionada;
         }
@@ -2187,7 +2289,7 @@
                 }
             }
         }
-    }*/
+    }
 
     // ================================================================
     //  NAVEGAÇÃO
@@ -2580,7 +2682,69 @@ async function excluirAnotacao(id) {
         alert("Erro ao excluir anotação: " + err.message);
     }
 }
+
+// ================================================================
+//  PLAYER VINHA FM (simples e seguro)
+// ================================================================
+document.addEventListener('DOMContentLoaded', function() {
+    const radioAudio = document.getElementById('radioAudio');
+    const radioToggle = document.getElementById('radioToggle');
+    const radioIcon = document.getElementById('radioIcon');
+
+    // Se algum elemento não existir, não prossegue
+    if (!radioAudio || !radioToggle || !radioIcon) {
+        console.warn('Player Vinha FM: elementos não encontrados.');
+        return;
+    }
+
+    let radioPlaying = false;
+
+    window.toggleRadio = function() {
+        if (!radioPlaying) {
+            radioAudio.play()
+                .then(() => {
+                    radioPlaying = true;
+                    radioToggle.classList.add('playing');
+                    radioIcon.className = 'fas fa-pause';
+                    registrarLogAcao('Iniciou o player Vinha FM');
+                })
+                .catch((err) => {
+                    console.warn('Erro ao iniciar stream:', err);
+                    alert('Não foi possível conectar à Vinha FM. Tente novamente.');
+                });
+        } else {
+            radioAudio.pause();
+            radioPlaying = false;
+            radioToggle.classList.remove('playing');
+            radioIcon.className = 'fas fa-play';
+            registrarLogAcao('Pausou o player Vinha FM');
+        }
+    };
+
+    // Tratamento para quando a música é pausada ou erro
+    radioAudio.addEventListener('pause', () => {
+        if (radioPlaying) {
+            radioPlaying = false;
+            radioToggle.classList.remove('playing');
+            radioIcon.className = 'fas fa-play';
+        }
+    });
+
+    radioAudio.addEventListener('error', () => {
+        if (radioPlaying) {
+            radioPlaying = false;
+            radioToggle.classList.remove('playing');
+            radioIcon.className = 'fas fa-play';
+            alert('Stream indisponível no momento.');
+        }
+    });
+});
 </script>
+
+    <!-- Player de áudio (Vinha FM) -->
+    <audio id="radioAudio" preload="none" style="display:none;">
+        <source src="https://streaming.vinhafm.com.br/stream" type="audio/mpeg">
+    </audio>
 
 </body>
 </html>
