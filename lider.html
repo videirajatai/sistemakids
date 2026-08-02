@@ -565,7 +565,7 @@
             margin-top: 50px;
         }
         .floating-nav {
-            position: fixed;
+            position: absolute;
             bottom: 100px;
             right: 20px;
             display: flex;
@@ -1365,13 +1365,15 @@
                 renderizarAgenda(listaAgenda);
             } catch(e) { renderizarAgenda([]); }
 
-            // 7. Palavras (mesma fonte do sistema de adultos - tabela 'palavras')
-            const { data: palavras, error: palError } = await supabaseClient
-                .from('palavras')
-                .select('*')
-                .order('data', { ascending: false });
-            if (palError) throw palError;
-            listaPalavras = palavras || [];
+            // 7. Palavras (via Google Script – planilha, aba "palavras", igual ao backup do Supabase)
+            try {
+                const resPal = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'buscarPalavras', payload: { usuarioAtivo: sessionStorage.getItem('usuarioLogado') } })
+                });
+                const jsonPal = await resPal.json();
+                listaPalavras = jsonPal.dados || [];
+            } catch(e) { listaPalavras = []; }
             renderizarPalavras(listaPalavras);
 
         } catch(e) {
