@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <!-- Módulo unificado da Bíblia -->
-    <!--<script src="js/biblia.js"></script>-->
+    <script src="js/biblia.js"></script>
 
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
@@ -724,9 +724,9 @@
             </div>
 
             <!-- Lado direito: botão da Bíblia -->
-            <!--<button class="btn-biblia-header" onclick="abrirBiblia()" title="Abrir Bíblia">
+            <button class="btn-biblia-header" onclick="abrirBiblia()" title="Abrir Bíblia">
                 <i class="fas fa-bible"></i> Bíblia
-            </button>-->
+            </button>
         </div>
     </div>
 
@@ -1367,13 +1367,20 @@
 
             // 7. Palavras (via Google Script – planilha, aba "palavras", igual ao backup do Supabase)
             try {
+                const controllerPal = new AbortController();
+                const timeoutPal = setTimeout(() => controllerPal.abort(), 8000); // nunca trava o restante do carregamento
                 const resPal = await fetch(API_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: 'buscarPalavras', payload: { usuarioAtivo: sessionStorage.getItem('usuarioLogado') } })
+                    body: JSON.stringify({ action: 'buscarPalavras', payload: { usuarioAtivo: sessionStorage.getItem('usuarioLogado') } }),
+                    signal: controllerPal.signal
                 });
+                clearTimeout(timeoutPal);
                 const jsonPal = await resPal.json();
-                listaPalavras = jsonPal.dados || [];
-            } catch(e) { listaPalavras = []; }
+                listaPalavras = (jsonPal && jsonPal.status === 'sucesso') ? (jsonPal.dados || []) : [];
+            } catch(e) {
+                console.warn('Palavras (GAS) indisponível ainda:', e);
+                listaPalavras = [];
+            }
             renderizarPalavras(listaPalavras);
 
         } catch(e) {
