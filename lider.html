@@ -724,9 +724,9 @@
             </div>
 
             <!-- Lado direito: botão da Bíblia -->
-            <!--<button class="btn-biblia-header" onclick="abrirBiblia()" title="Abrir Bíblia">
+            <button class="btn-biblia-header" onclick="abrirBiblia()" title="Abrir Bíblia">
                 <i class="fas fa-bible"></i> Bíblia
-            </button>-->
+            </button>
         </div>
     </div>
 
@@ -736,6 +736,7 @@
         <button id="btn-agenda" class="nav-btn" onclick="mudarSecao('agenda')"><i class="far fa-calendar-alt"></i> Agenda</button>
         <button id="btn-palavras" class="nav-btn" onclick="mudarSecao('palavras')"><i class="fas fa-book-open"></i> Palavras</button>
         <button id="btn-palavras" class="nav-btn" onclick="mudarSecao('anotacoes')"><i class="fas fa-book-open"></i> Anotações</button>
+        <button id="btn-material-celula" class="nav-btn" onclick="mudarSecao('material-celula')"><i class="fas fa-folder-open"></i> Material de Célula</button>
         <!--<button id="btn-biblia" class="nav-btn" onclick="mudarSecao('biblia')"><i class="fas fa-bible"></i> Bíblia</button>-->
         <!--<button id="btn-sugestao" class="nav-btn" onclick="mudarSecao('sugestao')"><i class="fas fa-hand-holding-heart"></i> Oferta</button>-->
     </div>
@@ -867,7 +868,15 @@
         </div>
         <p style="font-size:0.8rem; color:var(--text-light); margin-bottom:15px;"><i class="fas fa-lock"></i>  Suas anotações são privadas e visíveis apenas para você.</p>
         <div id="listaAnotacoes" class="member-grid"></div>
-    </div>    
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- ABA MATERIAL DE CÉLULA -->
+    <!-- ============================================================ -->
+    <div id="secao-material-celula" class="hidden">
+        <h4 style="color:var(--accent); margin-bottom:15px;"><i class="fas fa-folder-open"></i> Material de Célula</h4>
+        <div id="listaMaterialCelula"></div>
+    </div>
 </div> <!-- fechamento do container -->
 
 <!-- ================================================================ -->
@@ -1159,6 +1168,19 @@
     </div>
 </div>
 
+<!-- Modal Material de Célula -->
+<div id="modalMaterialCelula" class="modal-overlay hidden" onclick="fecharModalMaterial(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <a id="btnBaixarMaterial" href="#" target="_blank" rel="noopener" onclick="registrarLogAcao('Baixou material de célula: ' + (materialAtual ? materialAtual.titulo : ''))" class="btn-card" style="background:var(--accent); color:white; border:none; padding:8px 12px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;"><i class="fas fa-file-pdf"></i> Baixar PDF</a>
+            <button class="btn-close-modal" onclick="fecharModalMaterial(null)" style="position:static;">&times;</button>
+        </div>
+        <h3 id="modalTituloMaterial" style="color:var(--primary);"></h3>
+        <small id="modalDataMaterial" style="color:var(--text-light);"></small>
+        <div id="modalDescricaoMaterial" style="white-space:pre-wrap; line-height:1.7; margin-top:15px;"></div>
+    </div>
+</div>
+
 
 <!-- modalAnotacao (nova/editar anotação pessoal) -->
 <div id="modalAnotacao" class="modal-overlay hidden" onclick="fecharModalAnotacaoClique(event)" style="align-items: center;">
@@ -1206,6 +1228,8 @@
     let mapaNomes = {};
     let dadosMembros = [];
     let listaAnotacoes = [];
+    let listaMaterialCelula = [];
+    let materialAtual = null;
     let meuAuthId = null;
 
     // ================================================================
@@ -1382,6 +1406,20 @@
                 listaPalavras = [];
             }
             renderizarPalavras(listaPalavras);
+
+            // 8. Material de Célula (postado via pastor.html)
+            try {
+                const { data: materiais, error: matError } = await supabaseClient
+                    .from('rk_material_celula')
+                    .select('*')
+                    .order('data', { ascending: false });
+                if (matError) throw matError;
+                listaMaterialCelula = materiais || [];
+            } catch(e) {
+                console.warn('Material de célula indisponível:', e);
+                listaMaterialCelula = [];
+            }
+            renderizarMaterialCelula(listaMaterialCelula);
 
         } catch(e) {
             console.error("Erro ao carregar dados:", e);
@@ -2146,6 +2184,58 @@
     }
 
     // ================================================================
+    //  MATERIAL DE CÉLULA
+    // ================================================================
+    function renderizarMaterialCelula(lista) {
+        const div = document.getElementById('listaMaterialCelula');
+        div.innerHTML = '';
+        if (!lista || lista.length === 0) {
+            div.innerHTML = '<p style="text-align:center; color:#999;">Nenhum material disponível no momento.</p>';
+            return;
+        }
+        lista.forEach((m, index) => {
+            let dataF = m.data || '';
+            try { if (dataF.includes('-')) { const dp = dataF.split('-'); dataF = `${dp[2]}/${dp[1]}/${dp[0]}`; } } catch(e) {}
+            div.innerHTML += `
+                <div class="word-list-item" onclick="abrirMaterialCelula(${index})">
+                    <div>
+                        <div class="word-date"><i class="far fa-calendar-alt"></i> ${dataF}</div>
+                        <div class="word-theme">${m.titulo || 'Sem título'}</div>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color:var(--text-light);"></i>
+                </div>`;
+        });
+    }
+
+    function abrirMaterialCelula(index) {
+        const m = listaMaterialCelula[index];
+        materialAtual = m;
+        document.getElementById('modalTituloMaterial').innerText = m.titulo || '';
+        let dataF = m.data || '';
+        try { if (dataF.includes('-')) { const dp = dataF.split('-'); dataF = `${dp[2]}/${dp[1]}/${dp[0]}`; } } catch(e) {}
+        document.getElementById('modalDataMaterial').innerText = dataF;
+        document.getElementById('modalDescricaoMaterial').innerText = m.descricao || '';
+        const btnBaixar = document.getElementById('btnBaixarMaterial');
+        if (m.arquivo_url && m.arquivo_url.trim()) {
+            btnBaixar.href = m.arquivo_url.trim();
+            btnBaixar.style.display = 'inline-flex';
+        } else {
+            btnBaixar.href = '#';
+            btnBaixar.style.display = 'none';
+        }
+        document.getElementById('modalMaterialCelula').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        registrarLogAcao(`Abriu o material de célula "${m.titulo || 'Sem título'}" (${dataF})`);
+    }
+
+    function fecharModalMaterial(e) {
+        if (e === null || (e.target && e.target.id === 'modalMaterialCelula')) {
+            document.getElementById('modalMaterialCelula').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+    }
+
+    // ================================================================
     //  AGENDA
     // ================================================================
     function renderizarAgenda(lista) {
@@ -2313,7 +2403,7 @@
     }*/
 
     function mudarSecao(s) {
-        const secoes = ['minha-celula','celulas','biblia','agenda','palavras','sugestao','anotacoes'];
+        const secoes = ['minha-celula','celulas','biblia','agenda','palavras','sugestao','anotacoes','material-celula'];
         secoes.forEach(id => { const el = document.getElementById('secao-'+id); if(el) el.classList.add('hidden'); });
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         const secao = document.getElementById('secao-'+s); if(secao) secao.classList.remove('hidden');
