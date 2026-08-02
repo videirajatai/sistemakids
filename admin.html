@@ -126,18 +126,6 @@
             <img src="logo.png" style="width: 90px; border-radius: 50%;" alt="Logo Kids">
             <h3>Rede Kids • Admin</h3>
         </div>
-                <div style="display:flex; align-items:center; gap: 15px; position: relative;">
-                  <!-- Botão para trocar de painel -->
-                  <button onclick="toggleMenuPainel()" class="btn-refresh" title="Trocar Painel">
-                    <i class="fas fa-exchange-alt"></i>
-                  </button>
-                  <!-- Menu dropdown -->
-                  <div id="menuTrocaPainel" style="display: none; position: absolute; right: 0; top: 45px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 8px 0; min-width: 160px; z-index: 1000;">
-                    <a href="admin.html?t=" onclick="redirecionarPainel('admin')" class="dropdown-item"> Admin</a>
-                    <a href="pastor.html?t=" onclick="redirecionarPainel('pastor')" class="dropdown-item"> Pastoral</a>
-                    <a href="discipulador.html?t=" onclick="redirecionarPainel('discipulador')" class="dropdown-item"> Discipulador</a>
-                    <a href="lider.html?t=" onclick="redirecionarPainel('lider')" class="dropdown-item"> Líder</a>
-                  </div>
         <div style="display:flex; align-items:center; gap: 15px;">
             <button onclick="carregarTudo()" class="btn-refresh" title="Atualizar Dados"><i id="iconRefresh" class="fas fa-sync-alt"></i></button>
             <button onclick="fazerLogout()" class="btn-refresh" style="color: var(--danger-text);" title="Sair do Sistema"><i class="fas fa-sign-out-alt"></i></button>
@@ -504,11 +492,6 @@
             alert("Erro ao limpar os logs. Detalhes: " + e.message);
         }
     }
-
-     function redirecionarPainel(painel) {
-        const timestamp = new Date().getTime();
-        window.location.href = painel + '.html?t=' + timestamp;
-      }
 
     async function redefinirSenha(email) {
         if (!email || email === 'E-mail não cadastrado') {
