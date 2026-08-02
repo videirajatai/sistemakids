@@ -1,7 +1,7 @@
 {
-  "name": "Sistema Kids",
+  "name": "Sistema de Células - Kids",
   "short_name": "Sistema Kids",
-  "start_url": "./",
+  "start_url": "./index.html",
   "display": "standalone",
   "theme_color": "#0f172a",
   "background_color": "#f1f5f9",
