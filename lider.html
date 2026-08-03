@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <!-- Módulo unificado da Bíblia -->
@@ -628,6 +629,185 @@
         .word-date { font-weight: 700; color: var(--text-main); font-size: 0.95rem; }
         .word-theme { font-size: 0.85rem; color: var(--text-light); margin-top: 2px; }
 
+        /* --- Material de Célula: Apostilas / Lições --- */
+        .apostila-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 14px;
+        }
+        .apostila-card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            overflow: hidden;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+        .apostila-card:hover { transform: translateY(-3px); }
+        .apostila-capa {
+            width: 100%;
+            aspect-ratio: 3/4;
+            object-fit: cover;
+            background: #f1e7e2;
+        }
+        .apostila-capa-placeholder {
+            width: 100%;
+            aspect-ratio: 3/4;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+        }
+        .apostila-info { padding: 8px 10px; }
+        .apostila-titulo { font-weight: 700; font-size: 0.85rem; color: var(--text-main); line-height: 1.2; }
+        .apostila-ano { font-size: 0.75rem; color: var(--text-light); margin-top: 2px; }
+
+        .btn-voltar-apostilas {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 12px;
+            padding: 4px 0;
+        }
+        .licao-item {
+            background: white;
+            border-radius: var(--radius);
+            padding: 14px 15px;
+            margin-bottom: 10px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            border-left: 4px solid var(--primary);
+            transition: 0.2s;
+        }
+        .licao-item:active { transform: scale(0.98); }
+        .licao-numero {
+            background: var(--primary);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .licao-titulo { font-weight: 600; font-size: 0.9rem; color: var(--text-main); }
+
+        /* --- Visualizador seguro de lição (sem download) --- */
+        #visualizadorLicaoOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(20, 10, 12, 0.92);
+            z-index: 3000;
+            flex-direction: column;
+        }
+        #visualizadorLicaoOverlay.aberto { display: flex; }
+        .visualizador-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            color: white;
+            flex-shrink: 0;
+        }
+        .visualizador-header h4 { margin: 0; font-size: 0.95rem; }
+        .btn-fechar-visualizador {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+        .visualizador-corpo {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .visualizador-corpo canvas,
+        .visualizador-corpo img {
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+            pointer-events: none; /* evita drag/salvar imagem pelo menu de contexto do próprio elemento */
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        .visualizador-marca-dagua {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: space-around;
+            justify-content: space-around;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 5;
+        }
+        .visualizador-marca-dagua span {
+            color: rgba(255,255,255,0.16);
+            font-size: 0.8rem;
+            font-weight: 700;
+            transform: rotate(-30deg);
+            white-space: nowrap;
+        }
+        .visualizador-rodape {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 14px;
+            flex-shrink: 0;
+        }
+        .visualizador-rodape button {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .visualizador-rodape button:disabled { opacity: 0.3; cursor: default; }
+        .visualizador-pagina-atual { color: white; font-size: 0.85rem; min-width: 90px; text-align: center; }
+
+        /* Bloqueio de impressão: some tudo ao tentar imprimir enquanto o visualizador está aberto */
+        @media print {
+            body.impedir-impressao * { visibility: hidden !important; }
+            body.impedir-impressao::before {
+                content: "Impressão bloqueada por política de uso.";
+                visibility: visible !important;
+                display: block;
+                text-align: center;
+                margin-top: 40vh;
+                font-size: 1.2rem;
+            }
+        }
+
         .pix-copy-box {
             display: flex;
             align-items: center;
@@ -895,9 +1075,37 @@
     <!-- ============================================================ -->
     <div id="secao-material-celula" class="hidden">
         <h4 style="color:var(--accent); margin-bottom:15px;"><i class="fas fa-folder-open"></i> Material de Célula</h4>
-        <div id="listaMaterialCelula"></div>
+
+        <!-- Vista 1: grid de apostilas -->
+        <div id="viewApostilas">
+            <div id="listaApostilas" class="apostila-grid"></div>
+        </div>
+
+        <!-- Vista 2: lista de lições de uma apostila -->
+        <div id="viewLicoes" class="hidden">
+            <button class="btn-voltar-apostilas" onclick="voltarApostilas()"><i class="fas fa-arrow-left"></i> Apostilas</button>
+            <h4 id="tituloApostilaAtual" style="color:var(--primary); margin-bottom:12px;"></h4>
+            <div id="listaLicoes"></div>
+        </div>
     </div>
 </div> <!-- fechamento do container -->
+
+<!-- Visualizador seguro de lição (sem download / sem botão de impressão) -->
+<div id="visualizadorLicaoOverlay" oncontextmenu="return false">
+    <div class="visualizador-header">
+        <h4 id="visualizadorLicaoTitulo"></h4>
+        <button class="btn-fechar-visualizador" onclick="fecharVisualizadorLicao()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="visualizador-corpo" id="visualizadorLicaoCorpo">
+        <div class="visualizador-marca-dagua" id="visualizadorMarcaDagua"></div>
+        <p style="color:white;">Carregando...</p>
+    </div>
+    <div class="visualizador-rodape">
+        <button id="btnPaginaAnteriorLicao" onclick="paginaAnteriorLicao()"><i class="fas fa-chevron-left"></i></button>
+        <span class="visualizador-pagina-atual" id="visualizadorPaginaAtual">1 / 1</span>
+        <button id="btnPaginaProximaLicao" onclick="paginaProximaLicao()"><i class="fas fa-chevron-right"></i></button>
+    </div>
+</div>
 
 <!-- ================================================================ -->
 <!-- MODAIS -->
@@ -1189,20 +1397,6 @@
     </div>
 </div>
 
-<!-- Modal Material de Célula -->
-<div id="modalMaterialCelula" class="modal-overlay hidden" onclick="fecharModalMaterial(event)">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <a id="btnBaixarMaterial" href="#" target="_blank" rel="noopener" onclick="registrarLogAcao('Baixou material de célula: ' + (materialAtual ? materialAtual.titulo : ''))" class="btn-card" style="background:var(--accent); color:white; border:none; padding:8px 12px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;"><i class="fas fa-file-pdf"></i> Baixar PDF</a>
-            <button class="btn-close-modal" onclick="fecharModalMaterial(null)" style="position:static;">&times;</button>
-        </div>
-        <h3 id="modalTituloMaterial" style="color:var(--primary);"></h3>
-        <small id="modalDataMaterial" style="color:var(--text-light);"></small>
-        <div id="modalDescricaoMaterial" style="white-space:pre-wrap; line-height:1.7; margin-top:15px;"></div>
-    </div>
-</div>
-
-
 <!-- modalAnotacao (nova/editar anotação pessoal) -->
 <div id="modalAnotacao" class="modal-overlay hidden" onclick="fecharModalAnotacaoClique(event)" style="align-items: center;">
     <div class="modal-content" style="max-width:600px; height:auto; max-height:90vh; border-radius:20px;" onclick="event.stopPropagation()">
@@ -1231,6 +1425,10 @@
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
     const API_URL = sessionStorage.getItem('urlApi');
 
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
     function normalizarCategoria(cat) {
         return (cat || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     }
@@ -1249,8 +1447,14 @@
     let mapaNomes = {};
     let dadosMembros = [];
     let listaAnotacoes = [];
-    let listaMaterialCelula = [];
-    let materialAtual = null;
+    let listaApostilas = [];
+    let apostilaAtual = null;
+    let licoesDaApostilaAtual = [];
+    let licaoAtual = null;
+    let paginasSignedUrls = [];   // urls assinadas das páginas da lição aberta (imagens OU 1 pdf)
+    let pdfLicaoDoc = null;       // documento pdf.js carregado (quando tipo = pdf)
+    let paginaAtualLicao = 1;
+    let totalPaginasLicao = 1;
     let meuAuthId = null;
 
     // ================================================================
@@ -1428,19 +1632,20 @@
             }
             renderizarPalavras(listaPalavras);
 
-            // 8. Material de Célula (postado via pastor.html)
+            // 8. Material de Célula: Apostilas (postado via pastor.html)
             try {
-                const { data: materiais, error: matError } = await supabaseClient
-                    .from('rk_material_celula')
+                const { data: apostilas, error: apoError } = await supabaseClient
+                    .from('rk_apostilas')
                     .select('*')
-                    .order('data', { ascending: false });
-                if (matError) throw matError;
-                listaMaterialCelula = materiais || [];
+                    .order('ordem', { ascending: true })
+                    .order('ano', { ascending: false });
+                if (apoError) throw apoError;
+                listaApostilas = apostilas || [];
             } catch(e) {
-                console.warn('Material de célula indisponível:', e);
-                listaMaterialCelula = [];
+                console.warn('Apostilas indisponíveis:', e);
+                listaApostilas = [];
             }
-            renderizarMaterialCelula(listaMaterialCelula);
+            renderizarApostilas(listaApostilas);
 
         } catch(e) {
             console.error("Erro ao carregar dados:", e);
@@ -2205,55 +2410,185 @@
     }
 
     // ================================================================
-    //  MATERIAL DE CÉLULA
+    //  MATERIAL DE CÉLULA (Apostilas -> Lições -> Visualizador seguro)
     // ================================================================
-    function renderizarMaterialCelula(lista) {
-        const div = document.getElementById('listaMaterialCelula');
+    function renderizarApostilas(lista) {
+        const div = document.getElementById('listaApostilas');
         div.innerHTML = '';
         if (!lista || lista.length === 0) {
-            div.innerHTML = '<p style="text-align:center; color:#999;">Nenhum material disponível no momento.</p>';
+            div.innerHTML = '<p style="text-align:center; color:#999; grid-column:1/-1;">Nenhuma apostila disponível no momento.</p>';
             return;
         }
-        lista.forEach((m, index) => {
-            let dataF = m.data || '';
-            try { if (dataF.includes('-')) { const dp = dataF.split('-'); dataF = `${dp[2]}/${dp[1]}/${dp[0]}`; } } catch(e) {}
+        lista.forEach(a => {
+            const capa = a.capa_url
+                ? `<img src="${a.capa_url}" class="apostila-capa" alt="${a.titulo}">`
+                : `<div class="apostila-capa-placeholder"><i class="fas fa-book"></i></div>`;
             div.innerHTML += `
-                <div class="word-list-item" onclick="abrirMaterialCelula(${index})">
-                    <div>
-                        <div class="word-date"><i class="far fa-calendar-alt"></i> ${dataF}</div>
-                        <div class="word-theme">${m.titulo || 'Sem título'}</div>
+                <div class="apostila-card" onclick="abrirApostila('${a.id}')">
+                    ${capa}
+                    <div class="apostila-info">
+                        <div class="apostila-titulo">${a.titulo}</div>
+                        ${a.ano ? `<div class="apostila-ano">${a.ano}</div>` : ''}
                     </div>
-                    <i class="fas fa-chevron-right" style="color:var(--text-light);"></i>
                 </div>`;
         });
     }
 
-    function abrirMaterialCelula(index) {
-        const m = listaMaterialCelula[index];
-        materialAtual = m;
-        document.getElementById('modalTituloMaterial').innerText = m.titulo || '';
-        let dataF = m.data || '';
-        try { if (dataF.includes('-')) { const dp = dataF.split('-'); dataF = `${dp[2]}/${dp[1]}/${dp[0]}`; } } catch(e) {}
-        document.getElementById('modalDataMaterial').innerText = dataF;
-        document.getElementById('modalDescricaoMaterial').innerText = m.descricao || '';
-        const btnBaixar = document.getElementById('btnBaixarMaterial');
-        if (m.arquivo_url && m.arquivo_url.trim()) {
-            btnBaixar.href = m.arquivo_url.trim();
-            btnBaixar.style.display = 'inline-flex';
-        } else {
-            btnBaixar.href = '#';
-            btnBaixar.style.display = 'none';
+    async function abrirApostila(id) {
+        const apostila = listaApostilas.find(a => a.id === id);
+        if (!apostila) return;
+        apostilaAtual = apostila;
+        document.getElementById('tituloApostilaAtual').innerText = apostila.titulo;
+        document.getElementById('viewApostilas').classList.add('hidden');
+        document.getElementById('viewLicoes').classList.remove('hidden');
+        document.getElementById('listaLicoes').innerHTML = '<p style="text-align:center; color:#999;">Carregando...</p>';
+        registrarLogAcao(`Abriu a apostila "${apostila.titulo}"`);
+
+        try {
+            const { data: licoes, error } = await supabaseClient
+                .from('rk_licoes')
+                .select('*')
+                .eq('apostila_id', id)
+                .order('numero', { ascending: true });
+            if (error) throw error;
+            licoesDaApostilaAtual = licoes || [];
+            renderizarLicoes(licoesDaApostilaAtual);
+        } catch (err) {
+            document.getElementById('listaLicoes').innerHTML = `<p style="text-align:center; color:#999;">Erro ao carregar lições: ${err.message}</p>`;
         }
-        document.getElementById('modalMaterialCelula').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        registrarLogAcao(`Abriu o material de célula "${m.titulo || 'Sem título'}" (${dataF})`);
     }
 
-    function fecharModalMaterial(e) {
-        if (e === null || (e.target && e.target.id === 'modalMaterialCelula')) {
-            document.getElementById('modalMaterialCelula').classList.add('hidden');
-            document.body.style.overflow = '';
+    function voltarApostilas() {
+        document.getElementById('viewLicoes').classList.add('hidden');
+        document.getElementById('viewApostilas').classList.remove('hidden');
+        apostilaAtual = null;
+    }
+
+    function renderizarLicoes(lista) {
+        const div = document.getElementById('listaLicoes');
+        div.innerHTML = '';
+        if (!lista || lista.length === 0) {
+            div.innerHTML = '<p style="text-align:center; color:#999;">Nenhuma lição cadastrada nesta apostila.</p>';
+            return;
         }
+        lista.forEach(l => {
+            div.innerHTML += `
+                <div class="licao-item" onclick="abrirLicao('${l.id}')">
+                    <div class="licao-numero">${l.numero}</div>
+                    <div class="licao-titulo">${l.titulo}</div>
+                    <i class="fas fa-eye" style="color:var(--text-light); margin-left:auto;"></i>
+                </div>`;
+        });
+    }
+
+    // --- Visualizador seguro (sem download; canvas para PDF, <img> para JPGs) ---
+    async function gerarSignedUrlMaterial(path, expiresIn = 600) {
+        const { data, error } = await supabaseClient.storage.from('material-celula').createSignedUrl(path, expiresIn);
+        if (error) throw error;
+        return data.signedUrl;
+    }
+
+    function criarMarcaDagua() {
+        const div = document.createElement('div');
+        div.className = 'visualizador-marca-dagua';
+        const nome = sessionStorage.getItem('usuarioLogado') || 'Líder';
+        const agora = new Date().toLocaleString('pt-BR');
+        const texto = `${nome} • ${agora}`;
+        for (let i = 0; i < 12; i++) {
+            const span = document.createElement('span');
+            span.innerText = texto;
+            div.appendChild(span);
+        }
+        return div;
+    }
+
+    function bloqueadorAtalhosVisualizador(e) {
+        const bloquear = (
+            (e.ctrlKey && (e.key === 'p' || e.key === 'P')) ||
+            (e.ctrlKey && (e.key === 's' || e.key === 'S')) ||
+            (e.key === 'F12') ||
+            (e.ctrlKey && e.shiftKey && ['i','I','j','J','c','C'].includes(e.key))
+        );
+        if (bloquear) { e.preventDefault(); e.stopPropagation(); }
+    }
+    function ativarProtecoesVisualizador() { document.addEventListener('keydown', bloqueadorAtalhosVisualizador, true); }
+    function desativarProtecoesVisualizador() { document.removeEventListener('keydown', bloqueadorAtalhosVisualizador, true); }
+
+    async function abrirLicao(id) {
+        const licao = licoesDaApostilaAtual.find(l => l.id === id);
+        if (!licao) return;
+        licaoAtual = licao;
+        document.getElementById('visualizadorLicaoTitulo').innerText = `${apostilaAtual.titulo} • Lição ${licao.numero}: ${licao.titulo}`;
+        const corpo = document.getElementById('visualizadorLicaoCorpo');
+        corpo.innerHTML = '<p style="color:white;">Carregando...</p>';
+        document.getElementById('visualizadorLicaoOverlay').classList.add('aberto');
+        document.body.classList.add('impedir-impressao');
+        document.body.style.overflow = 'hidden';
+        ativarProtecoesVisualizador();
+        registrarLogAcao(`Visualizou a lição ${licao.numero} - "${licao.titulo}" (apostila: ${apostilaAtual.titulo})`);
+
+        try {
+            pdfLicaoDoc = null;
+            paginasSignedUrls = [];
+            if (licao.tipo === 'pdf') {
+                const url = await gerarSignedUrlMaterial(licao.storage_path);
+                pdfLicaoDoc = await pdfjsLib.getDocument(url).promise;
+                totalPaginasLicao = pdfLicaoDoc.numPages;
+            } else {
+                const { data: paginas, error: pagError } = await supabaseClient
+                    .from('rk_licao_paginas')
+                    .select('*')
+                    .eq('licao_id', licao.id)
+                    .order('ordem', { ascending: true });
+                if (pagError) throw pagError;
+                paginasSignedUrls = await Promise.all((paginas || []).map(p => gerarSignedUrlMaterial(p.storage_path)));
+                totalPaginasLicao = paginasSignedUrls.length || 1;
+            }
+            paginaAtualLicao = 1;
+            await renderizarPaginaLicao();
+        } catch (err) {
+            corpo.innerHTML = `<p style="color:white;">Erro ao carregar a lição: ${err.message}</p>`;
+        }
+    }
+
+    async function renderizarPaginaLicao() {
+        const corpo = document.getElementById('visualizadorLicaoCorpo');
+        corpo.innerHTML = '';
+        corpo.appendChild(criarMarcaDagua());
+
+        if (licaoAtual && licaoAtual.tipo === 'pdf' && pdfLicaoDoc) {
+            const page = await pdfLicaoDoc.getPage(paginaAtualLicao);
+            const viewport = page.getViewport({ scale: 1.4 });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const ctx = canvas.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            corpo.appendChild(canvas);
+        } else {
+            const img = document.createElement('img');
+            img.src = paginasSignedUrls[paginaAtualLicao - 1] || '';
+            img.draggable = false;
+            corpo.appendChild(img);
+        }
+
+        document.getElementById('visualizadorPaginaAtual').innerText = `${paginaAtualLicao} / ${totalPaginasLicao}`;
+        document.getElementById('btnPaginaAnteriorLicao').disabled = paginaAtualLicao <= 1;
+        document.getElementById('btnPaginaProximaLicao').disabled = paginaAtualLicao >= totalPaginasLicao;
+    }
+
+    function paginaAnteriorLicao() { if (paginaAtualLicao > 1) { paginaAtualLicao--; renderizarPaginaLicao(); } }
+    function paginaProximaLicao() { if (paginaAtualLicao < totalPaginasLicao) { paginaAtualLicao++; renderizarPaginaLicao(); } }
+
+    function fecharVisualizadorLicao() {
+        document.getElementById('visualizadorLicaoOverlay').classList.remove('aberto');
+        document.getElementById('visualizadorLicaoCorpo').innerHTML = '';
+        document.body.classList.remove('impedir-impressao');
+        document.body.style.overflow = '';
+        desativarProtecoesVisualizador();
+        pdfLicaoDoc = null;
+        paginasSignedUrls = [];
+        licaoAtual = null;
     }
 
     // ================================================================
