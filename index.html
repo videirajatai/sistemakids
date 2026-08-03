@@ -133,7 +133,7 @@
                         <input type="text" id="usuario-input" placeholder="Usuário" onkeypress="verificarEnter(event, 'login')" autocomplete="off">
                     </div>
                     <div class="input-group">
-                        <label>Senha (Numérica)</label>
+                        <label>Senha (Somente Números)</label>
                         <input type="password" 
                                id="senha-input" 
                                inputmode="numeric" 
@@ -382,7 +382,7 @@
             erro.style.display = 'none';
 
             try {
-                const urlDestino = window.location.origin + "/sistema/nova-senha.html";
+                const urlDestino = window.location.origin + "/sistemakids/nova-senha.html";
                 const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
                     redirectTo: urlDestino,
                 });
