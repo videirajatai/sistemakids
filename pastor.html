@@ -2396,6 +2396,63 @@
             };
         }
     }
+
+    // ================================================================
+//  PLAYER VINHA FM (simples e seguro)
+// ================================================================
+document.addEventListener('DOMContentLoaded', function() {
+    const radioAudio = document.getElementById('radioAudio');
+    const radioToggle = document.getElementById('radioToggle');
+    const radioIcon = document.getElementById('radioIcon');
+
+    // Se algum elemento não existir, não prossegue
+    if (!radioAudio || !radioToggle || !radioIcon) {
+        console.warn('Player Vinha FM: elementos não encontrados.');
+        return;
+    }
+
+    let radioPlaying = false;
+
+    window.toggleRadio = function() {
+        if (!radioPlaying) {
+            radioAudio.play()
+                .then(() => {
+                    radioPlaying = true;
+                    radioToggle.classList.add('playing');
+                    radioIcon.className = 'fas fa-pause';
+                    registrarLogAcao('Iniciou o player Vinha FM');
+                })
+                .catch((err) => {
+                    console.warn('Erro ao iniciar stream:', err);
+                    alert('Não foi possível conectar à Vinha FM. Tente novamente.');
+                });
+        } else {
+            radioAudio.pause();
+            radioPlaying = false;
+            radioToggle.classList.remove('playing');
+            radioIcon.className = 'fas fa-play';
+            registrarLogAcao('Pausou o player Vinha FM');
+        }
+    };
+
+    // Tratamento para quando a música é pausada ou erro
+    radioAudio.addEventListener('pause', () => {
+        if (radioPlaying) {
+            radioPlaying = false;
+            radioToggle.classList.remove('playing');
+            radioIcon.className = 'fas fa-play';
+        }
+    });
+
+    radioAudio.addEventListener('error', () => {
+        if (radioPlaying) {
+            radioPlaying = false;
+            radioToggle.classList.remove('playing');
+            radioIcon.className = 'fas fa-play';
+            alert('Stream indisponível no momento.');
+        }
+    });
+});
 </script>
 
 </body>
