@@ -124,8 +124,8 @@
             
             <div id="bloco-login" class="bloco ativo">
                  <img src="logo.png" style="width: 100px; border-radius: 50%;" alt="Logo Kids">
-                <h2 id="titulo-login">Bem-vindo(a)</h2>
-                <p class="subtitulo" id="subtitulo-login">Acesse o seu painel</p>
+                <h2 id="titulo-login">Bem-vinda)</h2>
+                <p class="subtitulo" id="subtitulo-login">Sistema de Células - Kids</p>
                 
                 <div id="area-form">
                     <div class="input-group">
@@ -133,13 +133,14 @@
                         <input type="text" id="usuario-input" placeholder="Usuário" onkeypress="verificarEnter(event, 'login')" autocomplete="off">
                     </div>
                     <div class="input-group">
-                        <label>Senha</label>
+                        <label>Senha (Numérica)</label>
                         <input type="password" 
                                id="senha-input" 
                                inputmode="numeric" 
                                pattern="[0-9]*" 
                                placeholder="••••••" 
-                               onkeypress="verificarEnter(event, 'login')">
+                               onkeypress="verificarEnter(event, 'login')"
+                               oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                     </div>
                     
                     <button id="btn-entrar" onclick="verificarLogin()">Entrar no Sistema</button>
