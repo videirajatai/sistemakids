@@ -522,6 +522,147 @@
         .versao-item:hover { background: var(--primary); color: white; }
         .versao-item.selecionada { background: var(--primary); color: white; }
 
+        /* --- Material de Célula: Apostilas / Lições (admin) --- */
+        .apostila-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 14px;
+        }
+        .apostila-card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .apostila-card:hover { transform: translateY(-3px); }
+        .apostila-capa {
+            width: 100%;
+            aspect-ratio: 3/4;
+            object-fit: cover;
+            background: #f1e7e2;
+            cursor: pointer;
+        }
+        .apostila-capa-placeholder {
+            width: 100%;
+            aspect-ratio: 3/4;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+        .apostila-info { padding: 8px 10px; cursor: pointer; }
+        .apostila-titulo { font-weight: 700; font-size: 0.85rem; color: var(--text-main); line-height: 1.2; }
+        .apostila-ano { font-size: 0.75rem; color: var(--text-light); margin-top: 2px; }
+        .apostila-acoes {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            display: flex;
+            gap: 4px;
+        }
+        .btn-icone-mini {
+            background: rgba(0,0,0,0.55);
+            color: white;
+            border: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-icone-mini:hover { background: var(--primary); }
+        .btn-icone-mini.excluir:hover { background: var(--danger-text); }
+
+        .btn-nova-apostila-card {
+            border: 2px dashed var(--primary-light);
+            border-radius: var(--radius);
+            aspect-ratio: 3/4.6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: var(--primary);
+            cursor: pointer;
+            background: transparent;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        .btn-nova-apostila-card:hover { background: rgba(139,90,106,0.06); }
+
+        .btn-voltar-apostilas {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 12px;
+            padding: 4px 0;
+        }
+        .btn-nova-licao {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+        .licao-item {
+            background: white;
+            border-radius: var(--radius);
+            padding: 14px 15px;
+            margin-bottom: 10px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 4px solid var(--primary);
+        }
+        .licao-numero {
+            background: var(--primary);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .licao-titulo { font-weight: 600; font-size: 0.9rem; color: var(--text-main); flex: 1; }
+        .licao-tipo-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 10px;
+            background: #f1e7e2;
+            color: var(--text-light);
+            text-transform: uppercase;
+        }
+        .licao-acoes { display: flex; gap: 6px; }
+
         @media print {
             body * { visibility: hidden; }
             .modal-content, .modal-content * { visibility: visible; }
@@ -554,6 +695,7 @@
         <button id="btn-pedidos" class="nav-btn" onclick="mudarSecao('pedidos')"><i class="fas fa-hands-praying"></i> Pedidos</button>
         <button id="btn-agenda" class="nav-btn" onclick="mudarSecao('agenda')"><i class="far fa-calendar-alt"></i> Agenda</button>
         <button id="btn-palavras" class="nav-btn" onclick="mudarSecao('palavras')"><i class="fas fa-book-open"></i> Palavras</button>
+        <button id="btn-material-celula" class="nav-btn" onclick="mudarSecao('material-celula')"><i class="fas fa-folder-open"></i> Material</button>
         <button id="btn-biblia" class="nav-btn" onclick="mudarSecao('biblia')"><i class="fas fa-bible"></i> Bíblia</button>
     </div>
 
@@ -664,6 +806,89 @@
     <div id="secao-palavras" class="hidden">
         <h4 style="color:var(--accent); margin-bottom:15px;">Palavras & Estudos</h4>
         <div id="listaPalavras"></div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- ABA MATERIAL DE CÉLULA (Apostilas -> Lições) -->
+    <!-- ============================================================ -->
+    <div id="secao-material-celula" class="hidden">
+        <h4 style="color:var(--accent); margin-bottom:15px;"><i class="fas fa-folder-open"></i> Material de Célula</h4>
+
+        <!-- Vista 1: grid de apostilas -->
+        <div id="viewApostilasAdmin">
+            <div id="listaApostilasAdmin" class="apostila-grid"></div>
+        </div>
+
+        <!-- Vista 2: lições de uma apostila -->
+        <div id="viewLicoesAdmin" class="hidden">
+            <button class="btn-voltar-apostilas" onclick="voltarApostilasAdmin()"><i class="fas fa-arrow-left"></i> Apostilas</button>
+            <h4 id="tituloApostilaAdminAtual" style="color:var(--primary); margin-bottom:12px;"></h4>
+            <button class="btn-nova-licao" onclick="abrirNovaLicao()"><i class="fas fa-plus"></i> Nova Lição</button>
+            <div id="listaLicoesAdmin"></div>
+        </div>
+    </div>
+
+    <!-- Modal Apostila (criar/editar) -->
+    <div id="modalApostila" class="modal-overlay hidden" onclick="fecharModal('modalApostila')" style="align-items:center;">
+        <div class="modal-content" style="max-width:500px;" onclick="event.stopPropagation()">
+            <button class="btn-close-modal" onclick="fecharModal('modalApostila')">&times;</button>
+            <h3 id="tituloModalApostila" style="color:var(--primary); margin-top:0;">Nova Apostila</h3>
+            <form id="formApostila">
+                <input type="hidden" name="id" id="apostilaFormId">
+                <div style="margin-bottom:12px;"><label>Título *</label><input type="text" name="titulo" required></div>
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;"><label>Ano</label><input type="number" name="ano" placeholder="2026"></div>
+                    <div style="flex:1;"><label>Ordem de exibição</label><input type="number" name="ordem" value="0"></div>
+                </div>
+                <div style="margin-bottom:12px;"><label>Descrição</label><textarea name="descricao" rows="2"></textarea></div>
+                <div style="margin-bottom:12px;">
+                    <label>Capa (imagem, opcional)</label>
+                    <input type="file" name="capa" accept="image/*">
+                    <small id="capaAtualInfo" style="color:var(--text-light); display:block; margin-top:4px;"></small>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" onclick="fecharModal('modalApostila')" class="btn-card" style="flex:1; padding:10px;">Cancelar</button>
+                    <button type="submit" class="btn-save" style="flex:2;">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Lição (criar/editar) -->
+    <div id="modalLicao" class="modal-overlay hidden" onclick="fecharModal('modalLicao')" style="align-items:center;">
+        <div class="modal-content" style="max-width:500px;" onclick="event.stopPropagation()">
+            <button class="btn-close-modal" onclick="fecharModal('modalLicao')">&times;</button>
+            <h3 id="tituloModalLicao" style="color:var(--primary); margin-top:0;">Nova Lição</h3>
+            <form id="formLicao">
+                <input type="hidden" name="id" id="licaoFormId">
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;"><label>Número *</label><input type="number" name="numero" required></div>
+                    <div style="flex:2;"><label>Título *</label><input type="text" name="titulo" required></div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label>Formato do arquivo *</label>
+                    <select name="tipo" id="licaoTipoSelect" onchange="toggleTipoLicaoInputs()" required>
+                        <option value="pdf">PDF (1 arquivo, várias páginas)</option>
+                        <option value="imagens">Imagens JPG (1 arquivo por página)</option>
+                    </select>
+                </div>
+                <div id="campoUploadPdf" style="margin-bottom:12px;">
+                    <label>Arquivo PDF <span id="pdfObrigatorioMarca">*</span></label>
+                    <input type="file" name="arquivo_pdf" accept="application/pdf">
+                    <small id="pdfAtualInfo" style="color:var(--text-light); display:block; margin-top:4px;"></small>
+                </div>
+                <div id="campoUploadImagens" style="margin-bottom:12px; display:none;">
+                    <label>Páginas (JPG/PNG, selecione todas juntas e na ordem certa) <span id="imagensObrigatorioMarca">*</span></label>
+                    <input type="file" name="arquivo_imagens" accept="image/*" multiple>
+                    <small style="color:var(--text-light); display:block; margin-top:4px;">Ao editar, um novo envio substitui todas as páginas anteriores.</small>
+                    <small id="imagensAtualInfo" style="color:var(--text-light); display:block; margin-top:4px;"></small>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" onclick="fecharModal('modalLicao')" class="btn-card" style="flex:1; padding:10px;">Cancelar</button>
+                    <button type="submit" class="btn-save" style="flex:2;" id="btnSalvarLicao">Salvar</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- ============================================================ -->
@@ -800,6 +1025,9 @@
     let palavraAtual = null;
     let mapaNomes = {};
     let todasCriancas = [];
+    let listaApostilas = [];
+    let apostilaAdminAtual = null;
+    let licoesDaApostilaAdmin = [];
 
     // ================================================================
     //  AUTENTICAÇÃO
@@ -925,7 +1153,22 @@
             listaPalavras = palavras || [];
             renderizarPalavras(listaPalavras);
 
-            // 7. Renderizar
+            // 8. Material de Célula: Apostilas
+            try {
+                const { data: apostilas, error: apoError } = await supabaseClient
+                    .from('rk_apostilas')
+                    .select('*')
+                    .order('ordem', { ascending: true })
+                    .order('ano', { ascending: false });
+                if (apoError) throw apoError;
+                listaApostilas = apostilas || [];
+            } catch(e) {
+                console.warn('Apostilas indisponíveis:', e);
+                listaApostilas = [];
+            }
+            renderizarApostilasAdmin(listaApostilas);
+
+            // 9. Renderizar
             atualizarEstatisticas();
             preencherFiltros();
             renderizarCelulas(todasCelulas);
@@ -1653,12 +1896,216 @@
     //  NAVEGAÇÃO
     // ================================================================
     function mudarSecao(s) {
-        const secoes = ['visao-geral', 'celulas', 'relatorios', 'pedidos', 'agenda', 'palavras', 'biblia'];
+        const secoes = ['visao-geral', 'celulas', 'relatorios', 'pedidos', 'agenda', 'palavras', 'biblia', 'material-celula'];
         secoes.forEach(id => { const el = document.getElementById('secao-' + id); if (el) el.classList.add('hidden'); });
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         const secao = document.getElementById('secao-' + s); if (secao) secao.classList.remove('hidden');
         const btn = document.getElementById('btn-' + s); if (btn) btn.classList.add('active');
         if (s === 'biblia') abrirBiblia();
+    }
+
+    // ================================================================
+    //  MATERIAL DE CÉLULA (admin) — Apostilas -> Lições
+    // ================================================================
+    async function uploadArquivoStorage(bucket, path, file) {
+        const { error } = await supabaseClient.storage.from(bucket).upload(path, file, { upsert: true, contentType: file.type });
+        if (error) throw error;
+    }
+
+    async function removerArquivoStorage(bucket, path) {
+        try { await supabaseClient.storage.from(bucket).remove([path]); } catch(e) { console.warn('Falha ao remover arquivo do storage:', e); }
+    }
+
+    function getPublicUrlStorage(bucket, path) {
+        const { data } = supabaseClient.storage.from(bucket).getPublicUrl(path);
+        return data.publicUrl;
+    }
+
+    function renderizarApostilasAdmin(lista) {
+        const div = document.getElementById('listaApostilasAdmin');
+        div.innerHTML = '';
+        div.innerHTML += `
+            <div class="btn-nova-apostila-card" onclick="abrirNovaApostila()">
+                <i class="fas fa-plus" style="font-size:1.6rem;"></i>
+                <span>Nova Apostila</span>
+            </div>`;
+        (lista || []).forEach(a => {
+            const capa = a.capa_url
+                ? `<img src="${a.capa_url}" class="apostila-capa" onclick="abrirApostilaAdmin('${a.id}')" alt="${a.titulo}">`
+                : `<div class="apostila-capa-placeholder" onclick="abrirApostilaAdmin('${a.id}')"><i class="fas fa-book"></i></div>`;
+            div.innerHTML += `
+                <div class="apostila-card">
+                    <div class="apostila-acoes">
+                        <button class="btn-icone-mini" onclick="event.stopPropagation(); abrirEditarApostila('${a.id}')" title="Editar"><i class="fas fa-pen"></i></button>
+                        <button class="btn-icone-mini excluir" onclick="event.stopPropagation(); excluirApostila('${a.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
+                    </div>
+                    ${capa}
+                    <div class="apostila-info" onclick="abrirApostilaAdmin('${a.id}')">
+                        <div class="apostila-titulo">${a.titulo}</div>
+                        ${a.ano ? `<div class="apostila-ano">${a.ano}</div>` : ''}
+                    </div>
+                </div>`;
+        });
+    }
+
+    function abrirNovaApostila() {
+        document.getElementById('formApostila').reset();
+        document.getElementById('apostilaFormId').value = '';
+        document.getElementById('tituloModalApostila').innerText = 'Nova Apostila';
+        document.getElementById('capaAtualInfo').innerText = '';
+        document.getElementById('modalApostila').classList.remove('hidden');
+    }
+
+    function abrirEditarApostila(id) {
+        const a = listaApostilas.find(x => x.id === id);
+        if (!a) return;
+        const form = document.getElementById('formApostila');
+        form.reset();
+        document.getElementById('apostilaFormId').value = a.id;
+        form.titulo.value = a.titulo || '';
+        form.ano.value = a.ano || '';
+        form.ordem.value = (a.ordem ?? 0);
+        form.descricao.value = a.descricao || '';
+        document.getElementById('tituloModalApostila').innerText = 'Editar Apostila';
+        document.getElementById('capaAtualInfo').innerText = a.capa_url ? 'Já existe uma capa. Envie uma nova imagem só se quiser trocá-la.' : '';
+        document.getElementById('modalApostila').classList.remove('hidden');
+    }
+
+    async function excluirApostila(id) {
+        const a = listaApostilas.find(x => x.id === id);
+        if (!a) return;
+        if (!confirm(`Excluir a apostila "${a.titulo}"? Todas as lições dela também serão excluídas. Essa ação não pode ser desfeita.`)) return;
+        try {
+            const { data: licoes } = await supabaseClient.from('rk_licoes').select('*').eq('apostila_id', id);
+            for (const l of (licoes || [])) {
+                if (l.tipo === 'pdf' && l.storage_path) {
+                    await removerArquivoStorage('material-celula', l.storage_path);
+                } else {
+                    const { data: paginas } = await supabaseClient.from('rk_licao_paginas').select('storage_path').eq('licao_id', l.id);
+                    const caminhos = (paginas || []).map(p => p.storage_path);
+                    if (caminhos.length) await supabaseClient.storage.from('material-celula').remove(caminhos);
+                }
+            }
+            if (a.capa_url) {
+                const partes = a.capa_url.split('/material-celula-capas/');
+                if (partes[1]) await removerArquivoStorage('material-celula-capas', partes[1]);
+            }
+            const { error } = await supabaseClient.from('rk_apostilas').delete().eq('id', id);
+            if (error) throw error;
+            await registrarLogAcao(`Excluiu a apostila "${a.titulo}"`);
+            await carregarTudo();
+        } catch (err) {
+            alert('Erro ao excluir apostila: ' + err.message);
+        }
+    }
+
+    function voltarApostilasAdmin() {
+        document.getElementById('viewLicoesAdmin').classList.add('hidden');
+        document.getElementById('viewApostilasAdmin').classList.remove('hidden');
+        apostilaAdminAtual = null;
+    }
+
+    async function abrirApostilaAdmin(id) {
+        const a = listaApostilas.find(x => x.id === id);
+        if (!a) return;
+        apostilaAdminAtual = a;
+        document.getElementById('tituloApostilaAdminAtual').innerText = a.titulo;
+        document.getElementById('viewApostilasAdmin').classList.add('hidden');
+        document.getElementById('viewLicoesAdmin').classList.remove('hidden');
+        document.getElementById('listaLicoesAdmin').innerHTML = '<p style="text-align:center; color:#999;">Carregando...</p>';
+        try {
+            const { data: licoes, error } = await supabaseClient
+                .from('rk_licoes')
+                .select('*')
+                .eq('apostila_id', id)
+                .order('numero', { ascending: true });
+            if (error) throw error;
+            licoesDaApostilaAdmin = licoes || [];
+            renderizarLicoesAdmin(licoesDaApostilaAdmin);
+        } catch (err) {
+            document.getElementById('listaLicoesAdmin').innerHTML = `<p style="text-align:center; color:#999;">Erro ao carregar lições: ${err.message}</p>`;
+        }
+    }
+
+    function renderizarLicoesAdmin(lista) {
+        const div = document.getElementById('listaLicoesAdmin');
+        div.innerHTML = '';
+        if (!lista || lista.length === 0) {
+            div.innerHTML = '<p style="text-align:center; color:#999;">Nenhuma lição cadastrada ainda.</p>';
+            return;
+        }
+        lista.forEach(l => {
+            div.innerHTML += `
+                <div class="licao-item">
+                    <div class="licao-numero">${l.numero}</div>
+                    <div class="licao-titulo">${l.titulo}</div>
+                    <div class="licao-tipo-badge">${l.tipo === 'pdf' ? 'PDF' : 'Imagens'}</div>
+                    <div class="licao-acoes">
+                        <button class="btn-icone-mini" style="background:var(--primary);" onclick="abrirEditarLicao('${l.id}')" title="Editar"><i class="fas fa-pen"></i></button>
+                        <button class="btn-icone-mini excluir" style="background:var(--danger-text);" onclick="excluirLicao('${l.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    function toggleTipoLicaoInputs() {
+        const tipo = document.getElementById('licaoTipoSelect').value;
+        document.getElementById('campoUploadPdf').style.display = tipo === 'pdf' ? 'block' : 'none';
+        document.getElementById('campoUploadImagens').style.display = tipo === 'imagens' ? 'block' : 'none';
+    }
+
+    function abrirNovaLicao() {
+        if (!apostilaAdminAtual) return;
+        const form = document.getElementById('formLicao');
+        form.reset();
+        document.getElementById('licaoFormId').value = '';
+        document.getElementById('licaoTipoSelect').value = 'pdf';
+        toggleTipoLicaoInputs();
+        document.getElementById('pdfObrigatorioMarca').style.display = 'inline';
+        document.getElementById('imagensObrigatorioMarca').style.display = 'inline';
+        document.getElementById('pdfAtualInfo').innerText = '';
+        document.getElementById('imagensAtualInfo').innerText = '';
+        document.getElementById('tituloModalLicao').innerText = 'Nova Lição';
+        document.getElementById('modalLicao').classList.remove('hidden');
+    }
+
+    function abrirEditarLicao(id) {
+        const l = licoesDaApostilaAdmin.find(x => x.id === id);
+        if (!l) return;
+        const form = document.getElementById('formLicao');
+        form.reset();
+        document.getElementById('licaoFormId').value = l.id;
+        form.numero.value = l.numero;
+        form.titulo.value = l.titulo;
+        document.getElementById('licaoTipoSelect').value = l.tipo;
+        toggleTipoLicaoInputs();
+        document.getElementById('pdfObrigatorioMarca').style.display = 'none';
+        document.getElementById('imagensObrigatorioMarca').style.display = 'none';
+        document.getElementById('pdfAtualInfo').innerText = l.tipo === 'pdf' ? 'Já existe um PDF salvo. Envie um novo arquivo só se quiser substituí-lo.' : '';
+        document.getElementById('imagensAtualInfo').innerText = l.tipo === 'imagens' ? 'Já existem páginas salvas. Envie novas imagens só se quiser substituí-las (substitui todas).' : '';
+        document.getElementById('tituloModalLicao').innerText = 'Editar Lição';
+        document.getElementById('modalLicao').classList.remove('hidden');
+    }
+
+    async function excluirLicao(id) {
+        const l = licoesDaApostilaAdmin.find(x => x.id === id);
+        if (!l) return;
+        if (!confirm(`Excluir a lição "${l.titulo}"? Essa ação não pode ser desfeita.`)) return;
+        try {
+            if (l.tipo === 'pdf' && l.storage_path) {
+                await removerArquivoStorage('material-celula', l.storage_path);
+            } else {
+                const { data: paginas } = await supabaseClient.from('rk_licao_paginas').select('storage_path').eq('licao_id', l.id);
+                const caminhos = (paginas || []).map(p => p.storage_path);
+                if (caminhos.length) await supabaseClient.storage.from('material-celula').remove(caminhos);
+            }
+            const { error } = await supabaseClient.from('rk_licoes').delete().eq('id', id);
+            if (error) throw error;
+            await registrarLogAcao(`Excluiu a lição "${l.titulo}" da apostila "${apostilaAdminAtual.titulo}"`);
+            await abrirApostilaAdmin(apostilaAdminAtual.id);
+        } catch (err) {
+            alert('Erro ao excluir lição: ' + err.message);
+        }
     }
 
     function fazerLogout() {
@@ -1679,6 +2126,134 @@
         document.getElementById('filtroRelCelula')?.addEventListener('change', filtrarRelatorios);
         document.getElementById('filtroRelDataInicio')?.addEventListener('change', filtrarRelatorios);
         document.getElementById('filtroRelDataFim')?.addEventListener('change', filtrarRelatorios);
+
+        // --- Apostila (criar/editar) ---
+        const formApostila = document.getElementById('formApostila');
+        if (formApostila) {
+            formApostila.onsubmit = async function(e) {
+                e.preventDefault();
+                const btn = this.querySelector('button[type="submit"]');
+                btn.disabled = true; btn.innerText = 'Salvando...';
+                const id = this.id.value || null;
+                const capaFile = this.capa.files[0] || null;
+                const dados = {
+                    titulo: this.titulo.value,
+                    ano: this.ano.value ? parseInt(this.ano.value) : null,
+                    ordem: this.ordem.value ? parseInt(this.ordem.value) : 0,
+                    descricao: this.descricao.value || null
+                };
+                try {
+                    let apostilaId = id;
+                    if (id) {
+                        const { error } = await supabaseClient.from('rk_apostilas').update(dados).eq('id', id);
+                        if (error) throw error;
+                    } else {
+                        const { data, error } = await supabaseClient.from('rk_apostilas').insert([dados]).select().single();
+                        if (error) throw error;
+                        apostilaId = data.id;
+                    }
+                    if (capaFile) {
+                        const ext = capaFile.name.split('.').pop();
+                        const path = `capas/${apostilaId}-${Date.now()}.${ext}`;
+                        await uploadArquivoStorage('material-celula-capas', path, capaFile);
+                        const url = getPublicUrlStorage('material-celula-capas', path);
+                        const { error: updError } = await supabaseClient.from('rk_apostilas').update({ capa_url: url }).eq('id', apostilaId);
+                        if (updError) throw updError;
+                    }
+                    await registrarLogAcao(id ? `Editou a apostila "${dados.titulo}"` : `Criou a apostila "${dados.titulo}"`);
+                    fecharModal('modalApostila');
+                    await carregarTudo();
+                } catch (err) {
+                    alert('Erro ao salvar apostila: ' + err.message);
+                } finally {
+                    btn.disabled = false; btn.innerText = 'Salvar';
+                }
+            };
+        }
+
+        // --- Lição (criar/editar) ---
+        const formLicao = document.getElementById('formLicao');
+        if (formLicao) {
+            formLicao.onsubmit = async function(e) {
+                e.preventDefault();
+                if (!apostilaAdminAtual) { alert('Nenhuma apostila selecionada.'); return; }
+                const btn = document.getElementById('btnSalvarLicao');
+                btn.disabled = true; btn.innerText = 'Salvando...';
+
+                const id = this.id.value || null;
+                const tipo = this.tipo.value;
+                const pdfFile = this.arquivo_pdf.files[0] || null;
+                const imagensFiles = Array.from(this.arquivo_imagens.files || []);
+                const licaoExistente = id ? licoesDaApostilaAdmin.find(x => x.id === id) : null;
+
+                if (!id) {
+                    if (tipo === 'pdf' && !pdfFile) { alert('Selecione o arquivo PDF.'); btn.disabled = false; btn.innerText = 'Salvar'; return; }
+                    if (tipo === 'imagens' && imagensFiles.length === 0) { alert('Selecione ao menos uma imagem.'); btn.disabled = false; btn.innerText = 'Salvar'; return; }
+                }
+
+                const dados = {
+                    apostila_id: apostilaAdminAtual.id,
+                    numero: parseInt(this.numero.value),
+                    titulo: this.titulo.value,
+                    tipo: tipo
+                };
+
+                try {
+                    // Se o tipo de arquivo mudou na edição, limpa os arquivos do tipo anterior
+                    if (licaoExistente && licaoExistente.tipo !== tipo) {
+                        if (licaoExistente.tipo === 'pdf' && licaoExistente.storage_path) {
+                            await removerArquivoStorage('material-celula', licaoExistente.storage_path);
+                            dados.storage_path = null;
+                        } else if (licaoExistente.tipo === 'imagens') {
+                            const { data: antigas } = await supabaseClient.from('rk_licao_paginas').select('storage_path').eq('licao_id', id);
+                            const caminhosAntigos = (antigas || []).map(p => p.storage_path);
+                            if (caminhosAntigos.length) await supabaseClient.storage.from('material-celula').remove(caminhosAntigos);
+                            await supabaseClient.from('rk_licao_paginas').delete().eq('licao_id', id);
+                        }
+                    }
+
+                    let licaoId = id;
+                    if (id) {
+                        const { error } = await supabaseClient.from('rk_licoes').update(dados).eq('id', id);
+                        if (error) throw error;
+                    } else {
+                        const { data, error } = await supabaseClient.from('rk_licoes').insert([dados]).select().single();
+                        if (error) throw error;
+                        licaoId = data.id;
+                    }
+
+                    if (tipo === 'pdf' && pdfFile) {
+                        const path = `${apostilaAdminAtual.id}/${licaoId}.pdf`;
+                        await uploadArquivoStorage('material-celula', path, pdfFile);
+                        const { error: updError } = await supabaseClient.from('rk_licoes').update({ storage_path: path }).eq('id', licaoId);
+                        if (updError) throw updError;
+                    } else if (tipo === 'imagens' && imagensFiles.length > 0) {
+                        // Substituição: remove páginas antigas (banco + storage) antes de subir as novas
+                        const { data: antigas } = await supabaseClient.from('rk_licao_paginas').select('storage_path').eq('licao_id', licaoId);
+                        const caminhosAntigos = (antigas || []).map(p => p.storage_path);
+                        if (caminhosAntigos.length) await supabaseClient.storage.from('material-celula').remove(caminhosAntigos);
+                        await supabaseClient.from('rk_licao_paginas').delete().eq('licao_id', licaoId);
+
+                        for (let i = 0; i < imagensFiles.length; i++) {
+                            const file = imagensFiles[i];
+                            const ext = file.name.split('.').pop();
+                            const path = `${apostilaAdminAtual.id}/${licaoId}/pagina-${i + 1}.${ext}`;
+                            await uploadArquivoStorage('material-celula', path, file);
+                            const { error: insError } = await supabaseClient.from('rk_licao_paginas').insert([{ licao_id: licaoId, ordem: i + 1, storage_path: path }]);
+                            if (insError) throw insError;
+                        }
+                    }
+
+                    await registrarLogAcao(id ? `Editou a lição "${dados.titulo}"` : `Criou a lição "${dados.titulo}" (apostila: ${apostilaAdminAtual.titulo})`);
+                    fecharModal('modalLicao');
+                    await abrirApostilaAdmin(apostilaAdminAtual.id);
+                } catch (err) {
+                    alert('Erro ao salvar lição: ' + err.message);
+                } finally {
+                    btn.disabled = false; btn.innerText = 'Salvar';
+                }
+            };
+        }
     }
 </script>
 
