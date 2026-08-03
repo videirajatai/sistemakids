@@ -16,7 +16,7 @@ const Biblia = (function() {
         msg: {
             nome: 'A Mensagem',
             tipo: 'capitulos',      // arquivos separados por capítulo
-            baseUrl: 'https://raw.githubusercontent.com/videirajatai/testes/main/biblia'
+            baseUrl: 'https://raw.githubusercontent.com/videirajatai/sistema/refs/heads/main/biblia/'
         },
         nvi: {
             nome: 'NVI - Nova Versão Internacional',
