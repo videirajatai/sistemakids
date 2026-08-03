@@ -109,6 +109,25 @@
             box-shadow: 0 4px 12px rgba(139, 90, 106, 0.25);
         }
 
+        .modal-download,
+            .modal-close {
+              background: #f1f5f9;
+              border: none;
+              width: 35px;
+              height: 35px;
+              border-radius: 50%;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              color: #64748b;
+              cursor: pointer;
+              font-size: 0.8rem;
+              transition: 0.2s;
+            }
+            .modal-download { color: var(--primary); }
+            .modal-download:hover,
+            .modal-close:hover { background: var(--primary); color: white; }
+
         /* Cards de estatísticas */
         .stats-grid {
             display: grid;
@@ -989,8 +1008,8 @@
     <!-- ============================================================ -->
     <div id="modalPalavra" class="modal-overlay hidden" onclick="fecharModalPalavra(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <button class="btn-card" onclick="baixarPalavraTXT()" style="background:var(--accent); color:white; border:none; padding:8px 12px;"><i class="fas fa-download"></i> TXT</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">                
+                <button class="modal-download" onclick="baixarPalavraTXT()" style="background:var(--accent); color:white; border:none; padding:8px 12px;"><i class="fas fa-download"></i></button>
                 <button class="btn-close-modal" onclick="fecharModalPalavra(null)" style="position:static;">&times;</button>
             </div>
             <h3 id="modalTitulo" style="color:var(--primary);"></h3>
