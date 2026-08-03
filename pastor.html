@@ -48,6 +48,18 @@
         }
         .container { max-width: 800px; margin: 0 auto; padding: 15px; }
 
+        /*.header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card-bg);
+            padding: 15px 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary);
+        }*/
+
         .header {
             display: flex;
             align-items: center;
@@ -58,6 +70,22 @@
             box-shadow: var(--shadow);
             margin-bottom: 20px;
             border-left: 5px solid var(--primary);
+            flex-wrap: wrap;
+        }
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .header-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            border-top: 1px solid rgba(139, 90, 106, 0.15);
+            padding-top: 8px;
+            margin-top: 8px;
         }
         .header h3 {
             margin: 0;
@@ -699,14 +727,32 @@
 <!-- ================================================================ -->
 <div class="container">
     <div class="header">
-        <div style="display:flex; align-items:center; gap:12px;">
-            <img src="logo.png" style="width: 100px; border-radius: 50%;" alt="Logo Kids">
-            <h3>Rede Kids • Pastora</h3>
+            <div class="header-top">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <img src="logo.png" style="width: 100px; border-radius: 50%;" alt="Logo Kids">
+                <h3>Rede Kids • Pastora</h3>
+            </div>
+            <div>
+                <button onclick="carregarTudo()" class="btn-refresh"><i id="iconRefresh" class="fas fa-sync-alt"></i></button>
+                <button onclick="fazerLogout()" class="btn-refresh" style="color:var(--danger-text);"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
         </div>
-        <div>
-            <button onclick="carregarTudo()" class="btn-refresh"><i id="iconRefresh" class="fas fa-sync-alt"></i></button>
-            <button onclick="fazerLogout()" class="btn-refresh" style="color:var(--danger-text);"><i class="fas fa-sign-out-alt"></i></button>
+
+         <div class="header-bottom">
+            <!-- Lado esquerdo: player da rádio -->
+            <div class="radio-player-mini">
+                <button id="radioToggle" class="radio-btn" onclick="toggleRadio()" title="Vinha FM">
+                    <i id="radioIcon" class="fas fa-play"></i>
+                </button>
+                <span class="radio-label">Vinha FM</span>
+            </div>
+
+            <!-- Lado direito: botão da Bíblia -->
+            <button class="btn-biblia-header" onclick="abrirBiblia()" title="Abrir Bíblia">
+                <i class="fas fa-bible"></i> Bíblia
+            </button>
         </div>
+        
     </div>
 
     <div class="nav-menu">
