@@ -47,8 +47,8 @@
         <h2>Criar Nova Senha</h2>
         <p id="mensagem-instrucao">Digite sua nova senha de <strong>6 dígitos numéricos</strong> abaixo.</p>
         
-        <input type="password" id="nova-senha" placeholder="6 dígitos numéricos (ex: 123456)" inputmode="numeric" maxlength="6" pattern="[0-9]*" required autocomplete="new-password" disabled>
-        <input type="password" id="confirma-senha" placeholder="Repita a nova senha" inputmode="numeric" maxlength="6" pattern="[0-9]*" required autocomplete="new-password" disabled>
+        <input type="password" id="nova-senha" placeholder="6 dígitos numéricos (ex: 123456)" inputmode="numeric" maxlength="6" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required autocomplete="new-password" disabled">
+        <input type="password" id="confirma-senha" placeholder="Repita a nova senha" inputmode="numeric" maxlength="6" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required autocomplete="new-password" disabled ">
         
         <button id="btn-salvar" onclick="salvarNovaSenha()" disabled>Salvar Nova Senha</button>
         <p id="msg-erro" class="erro"></p>
