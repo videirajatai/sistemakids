@@ -173,15 +173,15 @@
         }*/
 
         .nav-menu {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
             gap: 0.5rem;
-            justify-items: center;
-            align-items: center;
-            margin-bottom: 20px;
         }
         
         .nav-btn {
+            flex: 0 0 calc(33.333% - 0.5rem); /* 3 por linha */
+            max-width: calc(33.333% - 0.5rem);
             flex: 1 1 80px;
             min-width: 70px;
             padding: 10px 4px;
