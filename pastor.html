@@ -2076,7 +2076,7 @@
     //  NAVEGAÇÃO
     // ================================================================
     function mudarSecao(s) {
-        const secoes = ['visao-geral', 'celulas', 'relatorios', 'pedidos', 'agenda', 'palavras', 'biblia', 'material-celula'];
+        const secoes = ['celulas', 'relatorios', 'pedidos', 'agenda', 'palavras', 'biblia', 'material-celula', 'visao-geral'];
         secoes.forEach(id => { const el = document.getElementById('secao-' + id); if (el) el.classList.add('hidden'); });
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         const secao = document.getElementById('secao-' + s); if (secao) secao.classList.remove('hidden');
