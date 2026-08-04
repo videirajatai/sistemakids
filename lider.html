@@ -169,6 +169,14 @@
             font-size: 0.7rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
         }
          .btn-edit { background: #e0f2fe; color: #0284c7; }
+        
+        .nav-menu-sub {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }      
 
         .nav-menu {
             display: flex;
@@ -938,14 +946,17 @@
     </div>
 
     <div class="nav-menu">
+        <div class="nav-menu-sub">
         <button id="btn-minha-celula" class="nav-btn active" onclick="mudarSecao('minha-celula')"><i class="fas fa-users"></i> Minha Célula</button>
         <button id="btn-celulas" class="nav-btn" onclick="mudarSecao('celulas')"><i class="fas fa-network-wired"></i> Células</button>
         <button id="btn-agenda" class="nav-btn" onclick="mudarSecao('agenda')"><i class="far fa-calendar-alt"></i> Agenda</button>
-        <br><br><br>
+        </div>
+        <div class="nav-menu-sub">
         <button id="btn-palavras" class="nav-btn" onclick="mudarSecao('palavras')"><i class="fas fa-book-open"></i> Palavras</button>
         <button id="btn-palavras" class="nav-btn" onclick="mudarSecao('anotacoes')"><i class="fas fa-book-open"></i> Anotações</button>
         <button id="btn-material-celula" class="nav-btn" onclick="mudarSecao('material-celula')"><i class="fas fa-folder-open"></i> Material de Célula</button>        
         <!--<button id="btn-sugestao" class="nav-btn" onclick="mudarSecao('sugestao')"><i class="fas fa-hand-holding-heart"></i> Oferta</button>-->
+        </div>
     </div>
 
     <!-- ============================================================ -->
