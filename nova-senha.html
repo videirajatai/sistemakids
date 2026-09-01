@@ -59,7 +59,7 @@
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
         // ============================================================
-        //  REGISTRAR LOG (rk_logs)
+        //  REGISTRAR LOG
         // ============================================================
         async function registrarLogAcao(acao, email) {
             try {
@@ -84,7 +84,14 @@
             const msgInstrucao = document.getElementById('mensagem-instrucao');
             const erro = document.getElementById('msg-erro');
 
-            // 1. Tenta obter token_hash da query string (URL)
+            // 1. Verifica se o token já foi usado nesta sessão
+            if (sessionStorage.getItem('recovery_used') === 'true') {
+                // Token já foi processado, redireciona para login
+                window.location.href = "index.html?t=" + Date.now();
+                return;
+            }
+
+            // 2. Tenta obter token_hash da query string (URL)
             const queryParams = new URLSearchParams(window.location.search);
             const tokenHash = queryParams.get('token_hash');
             let autenticado = false;
@@ -97,15 +104,32 @@
                         type: 'recovery'
                     });
                     if (error) throw error;
+
+                    // Verificação bem-sucedida: invalida o token na URL
+                    if (window.history && window.history.replaceState) {
+                        const newUrl = window.location.pathname + window.location.hash;
+                        window.history.replaceState({}, document.title, newUrl);
+                    }
+
+                    // Marca token como usado para evitar reuso na mesma sessão
+                    sessionStorage.setItem('recovery_used', 'true');
+
                     autenticado = true;
                 } catch (err) {
                     erro.innerText = 'Token inválido ou expirado. Solicite um novo link.';
                     erro.style.display = 'block';
                     console.error(err);
+                    // Se o token falhou, remove da URL e redireciona para login
+                    if (window.history && window.history.replaceState) {
+                        const newUrl = window.location.pathname + window.location.hash;
+                        window.history.replaceState({}, document.title, newUrl);
+                    }
+                    // Opcional: redirecionar após alguns segundos
+                    // setTimeout(() => { window.location.href = "index.html"; }, 3000);
                 }
             }
 
-            // 2. Se não autenticou via token_hash, tenta via hash (access_token)
+            // 3. Se não autenticou via token_hash, tenta via hash (access_token)
             if (!autenticado) {
                 const hashParams = new URLSearchParams(window.location.hash.substring(1));
                 const accessToken = hashParams.get('access_token');
@@ -118,6 +142,11 @@
                             refresh_token: refreshToken
                         });
                         if (error) throw error;
+                        // Remove os parâmetros do hash para não reutilizar
+                        if (window.history && window.history.replaceState) {
+                            const newUrl = window.location.pathname;
+                            window.history.replaceState({}, document.title, newUrl);
+                        }
                         autenticado = true;
                     } catch (err) {
                         erro.innerText = 'Erro ao restaurar sessão. Tente novamente.';
@@ -127,7 +156,7 @@
                 }
             }
 
-            // 3. Último recurso: verifica se já existe sessão ativa
+            // 4. Último recurso: verifica se já existe sessão ativa
             if (!autenticado) {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
@@ -135,7 +164,7 @@
                 }
             }
 
-            // 4. Se autenticado, habilita os campos; senão, bloqueia
+            // 5. Habilita ou bloqueia os campos
             if (autenticado) {
                 novaSenha.disabled = false;
                 confirmaSenha.disabled = false;
@@ -154,7 +183,7 @@
         })();
 
         // ============================================================
-        //  SALVAR NOVA SENHA (mantido igual)
+        //  SALVAR NOVA SENHA
         // ============================================================
         async function salvarNovaSenha() {
             const senha1 = document.getElementById('nova-senha').value.trim();
@@ -197,12 +226,18 @@
                 sucesso.innerText = "Senha redefinida com sucesso! Redirecionando para o login...";
                 sucesso.style.display = 'block';
 
+                // Limpa campos e desabilita
                 document.getElementById('nova-senha').value = '';
                 document.getElementById('confirma-senha').value = '';
                 document.getElementById('nova-senha').disabled = true;
                 document.getElementById('confirma-senha').disabled = true;
                 btn.disabled = true;
                 btn.innerHTML = 'Salvar Nova Senha';
+
+                // Remove qualquer parâmetro da URL para não reutilizar token
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
 
                 setTimeout(() => {
                     window.location.href = "index.html?t=" + Date.now();
