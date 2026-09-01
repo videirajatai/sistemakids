@@ -55,6 +55,13 @@
     <script>
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
+        console.log('🔍 Diagnóstico do Link:');
+console.log('URL Completa:', window.location.href);
+console.log('Search Params:', window.location.search);
+const params = new URLSearchParams(window.location.search);
+console.log('token_hash:', params.get('token_hash'));
+console.log('type:', params.get('type'));
+
         // ============================================================
         //  REGISTRAR LOG
         // ============================================================
