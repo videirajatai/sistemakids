@@ -35,6 +35,7 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         .btn-loading { display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-loading .loading { width: 18px; height: 18px; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -56,7 +57,7 @@
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
         // ============================================================
-        //  LOG (mantido igual)
+        //  LOG
         // ============================================================
         async function registrarLogAcao(acao, email) {
             try {
@@ -70,13 +71,14 @@
         }
 
         // ============================================================
-        //  INICIALIZAÇÃO – Verifica token e autentica
+        //  INICIALIZAÇÃO - Verifica token e autentica
         // ============================================================
         (async function init() {
             const btn = document.getElementById('btn-salvar');
             const novaSenha = document.getElementById('nova-senha');
             const confirmaSenha = document.getElementById('confirma-senha');
             const erro = document.getElementById('msg-erro');
+            const sucesso = document.getElementById('msg-sucesso');
             const msgInstrucao = document.getElementById('mensagem-instrucao');
 
             // 1. Busca token_hash na query string
@@ -96,23 +98,8 @@
                     type: 'recovery'
                 });
 
-                if (error) throw error;
-
-                // 🔑 A SESSÃO JÁ FOI ESTABELECIDA PELO verifyOtp, mas vamos forçar com setSession
-                // para garantir que o updateUser funcione.
-                const { session } = data;
-                if (session) {
-                    const { error: setError } = await supabaseClient.auth.setSession({
-                        access_token: session.access_token,
-                        refresh_token: session.refresh_token
-                    });
-                    if (setError) throw setError;
-                } else {
-                    // Se não veio sessão, tenta usar a sessão atual
-                    const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
-                    if (!currentSession) {
-                        throw new Error('Não foi possível estabelecer sessão.');
-                    }
+                if (error) {
+                    throw error;
                 }
 
                 // Verificação bem-sucedida: habilita os campos
@@ -121,11 +108,14 @@
                 btn.disabled = false;
                 msgInstrucao.innerText = 'Token validado! Digite sua nova senha de 6 dígitos.';
                 erro.style.display = 'none';
+                sucesso.style.display = 'none';
+
+                console.log('Token validado com sucesso. Sessão estabelecida:', data);
 
             } catch (err) {
                 erro.innerText = 'Token inválido ou expirado. Solicite um novo link.';
                 erro.style.display = 'block';
-                console.error(err);
+                console.error('Erro na verificação:', err);
             }
         })();
 
@@ -138,6 +128,7 @@
             const erro = document.getElementById('msg-erro');
             const sucesso = document.getElementById('msg-sucesso');
             const btn = document.getElementById('btn-salvar');
+            const msgInstrucao = document.getElementById('mensagem-instrucao');
 
             // Resetar mensagens
             erro.style.display = 'none';
@@ -165,7 +156,7 @@
             btn.innerHTML = '<span class="btn-loading"><span class="loading"></span> Salvando...</span>';
 
             try {
-                // Verifica se a sessão ainda está ativa
+                // Verifica se o usuário ainda está autenticado (sessão ativa)
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (!session) {
                     throw new Error('Sessão expirada. Solicite um novo link de recuperação.');
@@ -177,6 +168,7 @@
                 });
 
                 if (error) {
+                    // Trata erro de senha já usada
                     if (error.message && error.message.includes('should be different from the old password')) {
                         throw new Error('A nova senha deve ser diferente da senha atual.');
                     }
@@ -197,7 +189,9 @@
                 document.getElementById('confirma-senha').disabled = true;
                 btn.disabled = true;
                 btn.innerHTML = 'Salvar Nova Senha';
+                msgInstrucao.innerText = 'Senha alterada! Você será redirecionado.';
 
+                // Aguarda 2.5s e redireciona para o login
                 setTimeout(() => {
                     window.location.href = "index.html?t=" + Date.now();
                 }, 2500);
@@ -207,7 +201,7 @@
                 erro.style.display = 'block';
                 btn.disabled = false;
                 btn.innerHTML = 'Salvar Nova Senha';
-                console.error(error);
+                console.error('Erro updateUser:', error);
             }
         }
     </script>
