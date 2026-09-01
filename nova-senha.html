@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redefinir Senha • Rede Kids</title>
-    
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
-    
     <style>
         :root {
             --primary: #8b5a6a;
@@ -21,7 +19,6 @@
             --danger-text: #b34a4a;
             --success-text: #2d6a4f;
         }
-
         body { display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--bg-color); font-family: 'Inter', sans-serif; margin: 0; }
         .card { background: white; padding: 40px 35px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); width: 100%; max-width: 400px; text-align: center; }
         .card h2 { color: var(--primary); font-weight: 700; margin-top: 0; }
@@ -75,7 +72,7 @@
         }
 
         // ============================================================
-        //  INICIALIZAÇÃO – PRIORIZA TOKEN_HASH DA QUERY STRING
+        //  INICIALIZAÇÃO – PRIORIZA TOKEN_HASH
         // ============================================================
         (async function init() {
             const btn = document.getElementById('btn-salvar');
@@ -86,19 +83,27 @@
 
             // 1. Verifica se o token já foi usado nesta sessão
             if (sessionStorage.getItem('recovery_used') === 'true') {
-                // Token já foi processado, redireciona para login
-                window.location.href = "index.html?t=" + Date.now();
+                // Não redireciona mais: mostra erro e bloqueia
+                erro.innerText = 'Este link de recuperação já foi utilizado. Solicite um novo link.';
+                erro.style.display = 'block';
+                msgInstrucao.innerText = 'Link inválido.';
+                btn.disabled = true;
+                novaSenha.disabled = true;
+                confirmaSenha.disabled = true;
+                // Remove token da URL se existir
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
                 return;
             }
 
-            // 2. Tenta obter token_hash da query string (URL)
+            // 2. Tenta obter token_hash da query string
             const queryParams = new URLSearchParams(window.location.search);
             const tokenHash = queryParams.get('token_hash');
             let autenticado = false;
 
             if (tokenHash) {
                 try {
-                    // Usa verifyOtp para validar o token e obter sessão
                     const { data, error } = await supabaseClient.auth.verifyOtp({
                         token_hash: tokenHash,
                         type: 'recovery'
@@ -107,34 +112,31 @@
 
                     // Verificação bem-sucedida: invalida o token na URL
                     if (window.history && window.history.replaceState) {
-                        const newUrl = window.location.pathname + window.location.hash;
-                        window.history.replaceState({}, document.title, newUrl);
+                        window.history.replaceState({}, document.title, window.location.pathname);
                     }
-
-                    // Marca token como usado para evitar reuso na mesma sessão
                     sessionStorage.setItem('recovery_used', 'true');
-
                     autenticado = true;
                 } catch (err) {
                     erro.innerText = 'Token inválido ou expirado. Solicite um novo link.';
                     erro.style.display = 'block';
-                    console.error(err);
-                    // Se o token falhou, remove da URL e redireciona para login
+                    // Remove token da URL também em caso de erro
                     if (window.history && window.history.replaceState) {
-                        const newUrl = window.location.pathname + window.location.hash;
-                        window.history.replaceState({}, document.title, newUrl);
+                        window.history.replaceState({}, document.title, window.location.pathname);
                     }
-                    // Opcional: redirecionar após alguns segundos
-                    // setTimeout(() => { window.location.href = "index.html"; }, 3000);
+                    // Bloqueia tudo
+                    btn.disabled = true;
+                    novaSenha.disabled = true;
+                    confirmaSenha.disabled = true;
+                    msgInstrucao.innerText = 'Link inválido.';
+                    return;
                 }
             }
 
-            // 3. Se não autenticou via token_hash, tenta via hash (access_token)
+            // 3. Se não autenticou via token_hash, tenta hash (access_token)
             if (!autenticado) {
                 const hashParams = new URLSearchParams(window.location.hash.substring(1));
                 const accessToken = hashParams.get('access_token');
                 const refreshToken = hashParams.get('refresh_token');
-
                 if (accessToken && refreshToken) {
                     try {
                         const { data, error } = await supabaseClient.auth.setSession({
@@ -142,21 +144,18 @@
                             refresh_token: refreshToken
                         });
                         if (error) throw error;
-                        // Remove os parâmetros do hash para não reutilizar
                         if (window.history && window.history.replaceState) {
-                            const newUrl = window.location.pathname;
-                            window.history.replaceState({}, document.title, newUrl);
+                            window.history.replaceState({}, document.title, window.location.pathname);
                         }
                         autenticado = true;
                     } catch (err) {
                         erro.innerText = 'Erro ao restaurar sessão. Tente novamente.';
                         erro.style.display = 'block';
-                        console.error(err);
                     }
                 }
             }
 
-            // 4. Último recurso: verifica se já existe sessão ativa
+            // 4. Último recurso: sessão existente
             if (!autenticado) {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
@@ -164,7 +163,7 @@
                 }
             }
 
-            // 5. Habilita ou bloqueia os campos
+            // 5. Habilita ou bloqueia
             if (autenticado) {
                 novaSenha.disabled = false;
                 confirmaSenha.disabled = false;
@@ -179,11 +178,12 @@
                 btn.disabled = true;
                 novaSenha.disabled = true;
                 confirmaSenha.disabled = true;
+                msgInstrucao.innerText = 'Link inválido.';
             }
         })();
 
         // ============================================================
-        //  SALVAR NOVA SENHA
+        //  SALVAR NOVA SENHA (mantido)
         // ============================================================
         async function salvarNovaSenha() {
             const senha1 = document.getElementById('nova-senha').value.trim();
@@ -201,7 +201,7 @@
                 return;
             }
             if (!/^\d{6}$/.test(senha1)) {
-                erro.innerText = "A senha deve conter exatamente 6 dígitos numéricos (0-9).";
+                erro.innerText = "A senha deve ter exatamente 6 dígitos numéricos.";
                 erro.style.display = 'block';
                 return;
             }
@@ -223,21 +223,15 @@
                 const { data: { user } } = await supabaseClient.auth.getUser();
                 await registrarLogAcao(`Redefiniu a senha (usuário: ${user?.email})`, user?.email);
 
-                sucesso.innerText = "Senha redefinida com sucesso! Redirecionando para o login...";
+                sucesso.innerText = "Senha redefinida com sucesso! Redirecionando...";
                 sucesso.style.display = 'block';
 
-                // Limpa campos e desabilita
                 document.getElementById('nova-senha').value = '';
                 document.getElementById('confirma-senha').value = '';
                 document.getElementById('nova-senha').disabled = true;
                 document.getElementById('confirma-senha').disabled = true;
                 btn.disabled = true;
                 btn.innerHTML = 'Salvar Nova Senha';
-
-                // Remove qualquer parâmetro da URL para não reutilizar token
-                if (window.history && window.history.replaceState) {
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                }
 
                 setTimeout(() => {
                     window.location.href = "index.html?t=" + Date.now();
