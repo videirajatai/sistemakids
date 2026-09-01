@@ -47,8 +47,8 @@
         <h2>Criar Nova Senha</h2>
         <p id="mensagem-instrucao">Digite sua nova senha de <strong>6 dígitos numéricos</strong> abaixo.</p>
         
-        <input type="password" id="nova-senha" placeholder="6 dígitos numéricos (ex: 123456)" inputmode="numeric" maxlength="6" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required autocomplete="new-password" disabled>
-        <input type="password" id="confirma-senha" placeholder="Repita a nova senha" inputmode="numeric" maxlength="6" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required autocomplete="new-password" disabled>
+        <input type="password" id="nova-senha" placeholder="6 dígitos numéricos (ex: 123456)" inputmode="numeric" maxlength="6" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required autocomplete="new-password" disabled">
+        <input type="password" id="confirma-senha" placeholder="Repita a nova senha" inputmode="numeric" maxlength="6" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required autocomplete="new-password" disabled ">
         
         <button id="btn-salvar" onclick="salvarNovaSenha()" disabled>Salvar Nova Senha</button>
         <p id="msg-erro" class="erro"></p>
@@ -75,17 +75,16 @@
         }
 
         // ============================================================
-        //  INICIALIZAR – RESTAURAR SESSÃO A PARTIR DO TOKEN NA URL
+        //  INICIALIZAR – RESTAURAR SESSÃO A PARTIR DO TOKEN NA URL###
         // ============================================================
         (async function init() {
             const btn = document.getElementById('btn-salvar');
             const novaSenha = document.getElementById('nova-senha');
             const confirmaSenha = document.getElementById('confirma-senha');
             const msgInstrucao = document.getElementById('mensagem-instrucao');
-            const erro = document.getElementById('msg-erro');
 
-            // Verifica se há tokens de recuperação no fragment hash
-            // Exemplo: /nova-senha#access_token=...&refresh_token=...&type=recovery
+            // Verifica se há um token de recuperação na URL (hash fragment)
+            // O Supabase redireciona com #access_token=...&refresh_token=...
             const hash = window.location.hash.substring(1);
             const params = new URLSearchParams(hash);
             const accessToken = params.get('access_token');
@@ -107,8 +106,8 @@
                     btn.disabled = false;
                     msgInstrucao.innerText = 'Digite sua nova senha de 6 dígitos.';
                 } catch (err) {
-                    erro.innerText = 'Erro ao validar o link de recuperação: ' + err.message;
-                    erro.style.display = 'block';
+                    document.getElementById('msg-erro').innerText = 'Erro ao validar o link de recuperação. Tente novamente ou solicite um novo link.';
+                    document.getElementById('msg-erro').style.display = 'block';
                     console.error(err);
                 }
             } else {
@@ -122,8 +121,8 @@
                     msgInstrucao.innerText = 'Digite sua nova senha de 6 dígitos.';
                 } else {
                     // Sem tokens e sem sessão: não é possível redefinir
-                    erro.innerText = 'Link de recuperação inválido ou expirado. Solicite um novo link.';
-                    erro.style.display = 'block';
+                    document.getElementById('msg-erro').innerText = 'Link de recuperação inválido ou expirado. Solicite um novo link.';
+                    document.getElementById('msg-erro').style.display = 'block';
                     btn.disabled = true;
                     novaSenha.disabled = true;
                     confirmaSenha.disabled = true;
