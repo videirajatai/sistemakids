@@ -18,8 +18,8 @@
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Sistema Videira Kids">
-    <meta name="apple-mobile-web-app-title" content="Sistema Videira Kids">
+    <meta name="application-name" content="Sistema Kids">
+    <meta name="apple-mobile-web-app-title" content="Sistema Kids">
     <meta name="theme-color" content="#f8f0ec"> 
     <link rel="manifest" href="manifest.json">
 
@@ -415,8 +415,7 @@
                 const { data: { user } } = await supabaseClient.auth.getUser();
 
                 if (!user || (user.email || '').toLowerCase() !== (cadastro.email || '').toLowerCase()) {
-                    Biometria.removerCadastro();
-                    throw new Error("Sessão expirada. Entre com usuário e senha e ative a digital de novo.");
+                    throw new Error("Sessão expirada. Entre com usuário e senha. A digital continua cadastrada neste aparelho.");
                 }
 
                 const { data: pessoa } = await supabaseClient
@@ -455,11 +454,13 @@
             const btnRemover = document.getElementById('btn-remover-bio');
             const ok = await Biometria.plataformaDisponivel();
             const tem = Biometria.temCadastro();
-            btnBio.style.display = (ok && tem) ? 'block' : 'none';
-            btnRemover.style.display = tem ? 'block' : 'none';
+            if (btnBio) btnBio.style.display = (ok && tem) ? 'block' : 'none';
+            if (btnRemover) btnRemover.style.display = tem ? 'block' : 'none';
         }
 
         atualizarBotoesBiometria().then(function () {
+            if (Biometria.temCadastro()) loginComBiometria();
+        }).catch(function () {
             if (Biometria.temCadastro()) loginComBiometria();
         });
 
