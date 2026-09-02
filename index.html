@@ -459,7 +459,9 @@
             btnRemover.style.display = tem ? 'block' : 'none';
         }
 
-        atualizarBotoesBiometria();
+        atualizarBotoesBiometria().then(function () {
+            if (Biometria.temCadastro()) loginComBiometria();
+        });
 
         function entrarNoPainel(nome, urlDestino) {
             const telaLogin = document.getElementById('tela-login');
