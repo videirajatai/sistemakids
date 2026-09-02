@@ -371,7 +371,7 @@
             }
 
             btn.disabled = true;
-            btn.innerText = "Aguardando o aparelho...";
+            btn.innerText = "Validando Segurança...";
             erro.style.display = 'none';
 
             try {
@@ -408,7 +408,7 @@
             const btn = document.getElementById('btn-biometria');
             erro.style.display = 'none';
             btn.disabled = true;
-            btn.innerText = "Aguardando o aparelho...";
+            btn.innerText = "Validando Segurança...";
 
             try {
                 const cadastro = await Biometria.autenticar();
