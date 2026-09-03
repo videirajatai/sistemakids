@@ -18,8 +18,8 @@
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Sistema Kids">
-    <meta name="apple-mobile-web-app-title" content="Sistema Kids">
+    <meta name="application-name" content="Sistema Videira Kids">
+    <meta name="apple-mobile-web-app-title" content="Sistema Videira Kids">
     <meta name="theme-color" content="#f8f0ec"> 
     <link rel="manifest" href="manifest.json">
 
@@ -148,7 +148,7 @@
                     <p id="mensagem-erro" class="mensagem-erro">⚠️ Usuário ou senha incorretos.</p>
                     
                     <button class="btn-link" onclick="mudarTela('bloco-recuperar')">Esqueci minha senha</button>
-                    <button id="btn-remover-bio" class="btn-link" onclick="desativarBiometria()" style="display: none;">Remover Biometria</button>
+                    <!--<button id="btn-remover-bio" class="btn-link" onclick="desativarBiometria()" style="display: none;">Não usar mais digital neste aparelho</button>-->
                 </div>
 
                 <div id="area-escolha" style="display: none;">
@@ -213,6 +213,13 @@
 
         function normalizarCategoria(cat) {
             return (cat || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function ehCelular() {
+            const ua = navigator.userAgent || '';
+            if (/Android|iPhone|iPad|iPod/i.test(ua)) return true;
+            if (navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua)) return true;
+            return false;
         }
 
      
@@ -288,7 +295,7 @@
             const paginas = paginasPorCategoria(categoriaNormalizada);
             gravarSessaoLocal(nomeReal, emailParaLogin, categoriaNormalizada, paginas);
 
-            const podeBio = await Biometria.plataformaDisponivel();
+            const podeBio = ehCelular() && await Biometria.plataformaDisponivel();
             if (podeBio && !Biometria.cadastradaPara(emailParaLogin)) {
                 loginPendente = {
                     nome: nomeReal,
@@ -371,7 +378,7 @@
             }
 
             btn.disabled = true;
-            btn.innerText = "Validando Segurança...";
+            btn.innerText = "Aguardando o aparelho...";
             erro.style.display = 'none';
 
             try {
@@ -408,7 +415,7 @@
             const btn = document.getElementById('btn-biometria');
             erro.style.display = 'none';
             btn.disabled = true;
-            btn.innerText = "Validando Segurança...";
+            btn.innerText = "Aguardando o aparelho...";
 
             try {
                 const cadastro = await Biometria.autenticar();
@@ -452,16 +459,16 @@
         async function atualizarBotoesBiometria() {
             const btnBio = document.getElementById('btn-biometria');
             const btnRemover = document.getElementById('btn-remover-bio');
-            const ok = await Biometria.plataformaDisponivel();
+            const ok = ehCelular() && await Biometria.plataformaDisponivel();
             const tem = Biometria.temCadastro();
             if (btnBio) btnBio.style.display = (ok && tem) ? 'block' : 'none';
-            if (btnRemover) btnRemover.style.display = tem ? 'block' : 'none';
+            if (btnRemover) btnRemover.style.display = (ok && tem) ? 'block' : 'none';
         }
 
         atualizarBotoesBiometria().then(function () {
-            if (Biometria.temCadastro()) loginComBiometria();
+            if (ehCelular() && Biometria.temCadastro()) loginComBiometria();
         }).catch(function () {
-            if (Biometria.temCadastro()) loginComBiometria();
+            if (ehCelular() && Biometria.temCadastro()) loginComBiometria();
         });
 
         function entrarNoPainel(nome, urlDestino) {
