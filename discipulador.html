@@ -57,6 +57,84 @@
             box-shadow: var(--shadow);
             margin-bottom: 20px;
             border-left: 5px solid var(--primary);
+            flex-wrap: wrap;
+        }
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .header-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            border-top: 1px solid rgba(139, 90, 106, 0.15);
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+        .radio-player-mini {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .radio-btn {
+            background: transparent;
+            border: 1px solid var(--primary);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--primary);
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+        .radio-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+        .radio-btn.playing {
+            border-color: #f2d70d;
+            color: #f2d70d;
+            animation: pulse-radio 1.5s infinite;
+        }
+        @keyframes pulse-radio {
+            0% { box-shadow: 0 0 0 0 rgba(232, 135, 224, 0.3); }
+            70% { box-shadow: 0 0 0 6px rgba(138, 25, 104, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(119, 18, 99, 0); }
+        }
+        .radio-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            font-weight: 500;
+            user-select: none;
+        }
+        .btn-biblia-header {
+            background: transparent;
+            border: 1px solid var(--primary);
+            border-radius: 20px;
+            padding: 4px 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary);
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: 'Inter', sans-serif;
+            height: 32px;
+        }
+        .btn-biblia-header:hover {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-biblia-header i {
+            font-size: 0.9rem;
         }
         .header h3 {
             margin: 0;
@@ -542,13 +620,27 @@
 <!-- ================================================================ -->
 <div class="container">
     <div class="header">
-        <div style="display:flex; align-items:center; gap:12px;">
-            <img src="logo.png" style="width: 100px; border-radius: 50%;" alt="Logo Kids">
-            <h3>Rede Kids • Discipuladora</h3>
+        <div class="header-top">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <img src="logo.png" style="width: 100px; border-radius: 50%;" alt="Logo Kids">
+                <h3>Rede Kids • Discipuladora</h3>
+            </div>
+            <div>
+                <button onclick="carregarTudo()" class="btn-refresh"><i id="iconRefresh" class="fas fa-sync-alt"></i></button>
+                <button onclick="fazerLogout()" class="btn-refresh" style="color:var(--danger-text);"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
         </div>
-        <div>
-            <button onclick="carregarTudo()" class="btn-refresh"><i id="iconRefresh" class="fas fa-sync-alt"></i></button>
-            <button onclick="fazerLogout()" class="btn-refresh" style="color:var(--danger-text);"><i class="fas fa-sign-out-alt"></i></button>
+
+        <div class="header-bottom">
+            <div class="radio-player-mini">
+                <button id="radioToggle" class="radio-btn" onclick="toggleRadio()" title="Vinha FM">
+                    <i id="radioIcon" class="fas fa-play"></i>
+                </button>
+                <span class="radio-label">Vinha FM</span>
+            </div>
+            <button class="btn-biblia-header" onclick="abrirBiblia()" title="Abrir Bíblia">
+                <i class="fas fa-bible"></i> Bíblia
+            </button>
         </div>
     </div>
 
@@ -558,7 +650,6 @@
         <button id="btn-arquivos" class="nav-btn" onclick="mudarSecao('arquivos')"><i class="fas fa-archive"></i> Inativos</button>
         <button id="btn-agenda" class="nav-btn" onclick="mudarSecao('agenda')"><i class="far fa-calendar-alt"></i> Agenda</button>
         <button id="btn-palavras" class="nav-btn" onclick="mudarSecao('palavras')"><i class="fas fa-book-open"></i> Palavras</button>
-        <button id="btn-biblia" class="nav-btn" onclick="mudarSecao('biblia')"><i class="fas fa-bible"></i> Bíblia</button>
     </div>
 
     <!-- ============================================================ -->
@@ -582,7 +673,7 @@
     <!-- ABA CÉLULAS (TABELA GERAL) -->
     <!-- ============================================================ -->
     <div id="secao-celulas" class="hidden">
-        <h4 style="color:var(--primary);">Todas as Células</h4>
+        <h4 style="color:var(--primary);">Células da Minha Rede</h4>
         <div style="overflow-x:auto;">
             <table class="table-clean">
                 <thead><tr><th>Célula</th><th>Líder</th><th>Dia</th><th>Discipuladora</th></tr></thead>
@@ -983,18 +1074,40 @@
         const discipuladorId = sessionStorage.getItem('discipuladorId');
 
         try {
-            // 1. Células supervisionadas (onde supervisor_user_id = meu ID)
-            const { data: celulas, error: celError } = await supabaseClient
+            // Rede da discipuladora: pessoas com superior_id = ela + células onde ela é supervisora
+            const { data: lideresRede, error: lidError } = await supabaseClient
+                .from('rk_pessoas')
+                .select('id, nome, categoria, superior_id')
+                .eq('superior_id', discipuladorId);
+            if (lidError) throw lidError;
+            const idsLideres = (lideresRede || []).map(l => l.id);
+
+            const { data: celulasSup, error: celError } = await supabaseClient
                 .from('rk_celulas')
                 .select('*')
                 .eq('supervisor_user_id', discipuladorId);
             if (celError) throw celError;
-            dadosCelulas = celulas || [];
+
+            let celulasLider = [];
+            if (idsLideres.length) {
+                const { data: celPorLider, error: celLidError } = await supabaseClient
+                    .from('rk_celulas')
+                    .select('*')
+                    .or(`lider_user_id.in.(${idsLideres.join(',')}),colider_user_id.in.(${idsLideres.join(',')})`);
+                if (celLidError) throw celLidError;
+                celulasLider = celPorLider || [];
+            }
+
+            const mapaCelulas = {};
+            [...(celulasSup || []), ...celulasLider].forEach(c => { mapaCelulas[c.id] = c; });
+            dadosCelulas = Object.values(mapaCelulas);
             celulasSupervisionadas = dadosCelulas;
             window.celulaMap = {};
             dadosCelulas.forEach(c => { window.celulaMap[c.id] = c.nome; });
+            const idsCelulas = dadosCelulas.map(c => c.id);
 
-            // 2. Montar mapa de nomes dos líderes (e discipuladoras)
+            mapaNomes = {};
+            (lideresRede || []).forEach(p => { mapaNomes[p.id] = p.nome; });
             const idsPessoas = [...new Set([
                 ...dadosCelulas.map(c => c.lider_user_id).filter(id => id),
                 ...dadosCelulas.map(c => c.colider_user_id).filter(id => id),
@@ -1006,30 +1119,47 @@
                     .select('id, nome')
                     .in('id', idsPessoas);
                 if (!errP) {
-                    mapaNomes = {};
-                    pessoas.forEach(p => { mapaNomes[p.id] = p.nome; });
+                    (pessoas || []).forEach(p => { mapaNomes[p.id] = p.nome; });
                 }
             }
 
-            // 3. Todos os membros (crianças) – para arquivados e outros
-            const { data: membros, error: memError } = await supabaseClient
-                .from('rk_pessoas')
-                .select('*');
-            if (memError) throw memError;
-            dadosMembros = membros || [];
-            dadosPessoas = membros || [];
+            let membros = [];
+            if (idsCelulas.length) {
+                const { data: memCel, error: memError } = await supabaseClient
+                    .from('rk_pessoas')
+                    .select('*')
+                    .in('celula_id', idsCelulas);
+                if (memError) throw memError;
+                membros = memCel || [];
+            }
+            if (idsLideres.length) {
+                const { data: memLid, error: memLidError } = await supabaseClient
+                    .from('rk_pessoas')
+                    .select('*')
+                    .in('id', idsLideres);
+                if (memLidError) throw memLidError;
+                const mapaMembros = {};
+                membros.forEach(m => { mapaMembros[m.id] = m; });
+                (memLid || []).forEach(m => { mapaMembros[m.id] = m; });
+                membros = Object.values(mapaMembros);
+            }
+            dadosMembros = membros;
+            dadosPessoas = membros;
 
-            // 4. Renderizar
             renderizarCelulasRede(celulasSupervisionadas);
             renderizarTabelaCelulas(celulasSupervisionadas);
             renderizarMembrosArquivados(dadosMembros);
 
-            // 5. Relatórios
-            const { data: rels, error: relError } = await supabaseClient
-                .from('rk_relatorios')
-                .select('*');
-            if (relError) throw relError;
-            dadosRelatorios = rels || [];
+            if (idsCelulas.length) {
+                const { data: rels, error: relError } = await supabaseClient
+                    .from('rk_relatorios')
+                    .select('*')
+                    .in('celula_id', idsCelulas);
+                if (relError) throw relError;
+                dadosRelatorios = rels || [];
+            } else {
+                dadosRelatorios = [];
+            }
 
             // 6. Agenda
             try {
@@ -1321,6 +1451,10 @@
             .eq('id', id)
             .single();
         if (!relatorio) return alert("Relatório não encontrado.");
+        const idsCelulasRede = (celulasSupervisionadas || dadosCelulas || []).map(c => String(c.id));
+        if (!idsCelulasRede.includes(String(relatorio.celula_id))) {
+            return alert("Relatório fora da sua rede.");
+        }
 
         const { data: presencas } = await supabaseClient
             .from('rk_presencas')
@@ -1715,11 +1849,10 @@
     // ================================================================
     function mudarSecao(s) {
         fecharBiblia();
-        ['minha-rede', 'celulas', 'arquivos', 'agenda', 'palavras', 'biblia'].forEach(id => document.getElementById(`secao-${id}`)?.classList.add('hidden'));
+        ['minha-rede', 'celulas', 'arquivos', 'agenda', 'palavras'].forEach(id => document.getElementById(`secao-${id}`)?.classList.add('hidden'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`secao-${s}`)?.classList.remove('hidden');
         document.getElementById(`btn-${s}`)?.classList.add('active');
-        if (s === 'biblia') abrirBiblia();
     }
 
     function fazerLogout() {
@@ -1864,7 +1997,63 @@
 
         document.getElementById('filtroLiderRede')?.addEventListener('change', filtrarCelulasRede);
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const radioAudio = document.getElementById('radioAudio');
+        const radioToggle = document.getElementById('radioToggle');
+        const radioIcon = document.getElementById('radioIcon');
+
+        if (!radioAudio || !radioToggle || !radioIcon) {
+            console.warn('Player Vinha FM: elementos não encontrados.');
+            return;
+        }
+
+        let radioPlaying = false;
+
+        window.toggleRadio = function() {
+            if (!radioPlaying) {
+                radioAudio.play()
+                    .then(() => {
+                        radioPlaying = true;
+                        radioToggle.classList.add('playing');
+                        radioIcon.className = 'fas fa-pause';
+                        registrarLogAcao('Iniciou o player Vinha FM');
+                    })
+                    .catch((err) => {
+                        console.warn('Erro ao iniciar stream:', err);
+                        alert('Não foi possível conectar à Vinha FM. Tente novamente.');
+                    });
+            } else {
+                radioAudio.pause();
+                radioPlaying = false;
+                radioToggle.classList.remove('playing');
+                radioIcon.className = 'fas fa-play';
+                registrarLogAcao('Pausou o player Vinha FM');
+            }
+        };
+
+        radioAudio.addEventListener('pause', () => {
+            if (radioPlaying) {
+                radioPlaying = false;
+                radioToggle.classList.remove('playing');
+                radioIcon.className = 'fas fa-play';
+            }
+        });
+
+        radioAudio.addEventListener('error', () => {
+            if (radioPlaying) {
+                radioPlaying = false;
+                radioToggle.classList.remove('playing');
+                radioIcon.className = 'fas fa-play';
+                alert('Stream indisponível no momento.');
+            }
+        });
+    });
 </script>
+
+    <audio id="radioAudio" preload="none" style="display:none;">
+        <source src="https://streaming.vinhafm.com.br/stream" type="audio/mpeg">
+    </audio>
 
 </body>
 </html>
