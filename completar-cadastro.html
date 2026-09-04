@@ -237,8 +237,10 @@
                 // 1. Criar usuário no Supabase Auth
                 const { data: authData, error: authError } = await supabaseClient.auth.signUp({
                     email: email,
-                    password: senha
+                    password: senha,
+                    options: { data: { token_convite: token } }
                 });
+
                 if (authError) {
                     erro.innerText = 'Erro ao criar conta: ' + authError.message;
                     erro.style.display = 'block';
