@@ -1189,38 +1189,64 @@
     // ================================================================
     //  PREENCHER SELECT DE LÍDERES (para formulário de célula)
     // ================================================================
-    async function preencherSelectLideres(selectLider, selectColider = null) {
-        // Líderes que são supervisionados por esta discipuladora
+    async function preencherSelectLideres(selectLider, selectColider = null, celulaId = null) {
         const discipuladorId = sessionStorage.getItem('discipuladorId');
-        const { data: lideres } = await supabaseClient
-            .from('rk_pessoas')
-            .select('id, nome')
-            .eq('superior_id', discipuladorId)
-            .eq('arquivado', false)
-            .in('categoria', ['Líder', 'Líder em Treinamento']);
-        selectLider.innerHTML = '<option value="">Selecione um líder</option>';
-        if (lideres) {
-            lideres.forEach(l => {
-                selectLider.innerHTML += `<option value="${l.id}">${l.nome}</option>`;
+        const idsLideresCelulas = [...new Set(
+            (dadosCelulas || []).map(c => c.lider_user_id).filter(Boolean)
+        )];
+
+        const mapaLideres = {};
+
+        if (idsLideresCelulas.length) {
+            const { data: lideresCel } = await supabaseClient
+                .from('rk_pessoas')
+                .select('id, nome, usuario, categoria, arquivado')
+                .in('id', idsLideresCelulas);
+            (lideresCel || []).forEach(p => {
+                if (p.arquivado === true || p.arquivado === 'Sim') return;
+                mapaLideres[p.id] = p;
             });
         }
 
-        // Para o select de colíder (líder em treinamento), se existir
-        if (selectColider) {
-            selectColider.innerHTML = '<option value="">Nenhum</option>';
-            // Podem ser os mesmos líderes, mas apenas os que são "Líder em Treinamento"
-            const { data: treinamentos } = await supabaseClient
+        const { data: pessoasRede } = await supabaseClient
+            .from('rk_pessoas')
+            .select('id, nome, usuario, categoria, arquivado')
+            .eq('superior_id', discipuladorId)
+            .eq('arquivado', false);
+
+        (pessoasRede || []).forEach(p => {
+            const cat = normalizarCategoria(p.categoria);
+            if (cat === 'lider') mapaLideres[p.id] = p;
+        });
+
+        const lideres = Object.values(mapaLideres).sort((a, b) =>
+            (a.nome || a.usuario || '').localeCompare(b.nome || b.usuario || '', 'pt-BR')
+        );
+        selectLider.innerHTML = '<option value="">Selecione um líder</option>';
+        lideres.forEach(l => {
+            selectLider.innerHTML += `<option value="${l.id}">${l.nome || l.usuario || 'Sem nome'}</option>`;
+        });
+
+        if (!selectColider) return;
+        selectColider.innerHTML = '<option value="">Nenhum</option>';
+        if (celulaId) {
+            const { data: membros } = await supabaseClient
                 .from('rk_pessoas')
                 .select('id, nome')
-                .eq('superior_id', discipuladorId)
+                .eq('celula_id', celulaId)
                 .eq('arquivado', false)
-                .eq('categoria', 'Líder em Treinamento');
-            if (treinamentos) {
-                treinamentos.forEach(t => {
-                    selectColider.innerHTML += `<option value="${t.id}">${t.nome}</option>`;
-                });
-            }
+                .order('nome');
+            (membros || []).forEach(m => {
+                selectColider.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
+            });
+            return;
         }
+        (pessoasRede || []).forEach(p => {
+            const cat = normalizarCategoria(p.categoria);
+            if (cat.includes('treinamento')) {
+                selectColider.innerHTML += `<option value="${p.id}">${p.nome || p.usuario}</option>`;
+            }
+        });
     }
 
     // ================================================================
@@ -1405,7 +1431,7 @@
         document.getElementById('editCelulaDataInicio').value = cel.data_inicio || '';
         document.getElementById('editCelulaAcompanhaAdulto').value = cel.acompanha_celula_adulto || 'Não';
         document.getElementById('tituloModalCelula').innerText = 'Editar Célula';
-        await preencherSelectLideres(document.getElementById('editCelulaLider'), document.getElementById('editCelulaColider'));
+        await preencherSelectLideres(document.getElementById('editCelulaLider'), document.getElementById('editCelulaColider'), cel.id);
         document.getElementById('editCelulaLider').value = cel.lider_user_id || '';
         document.getElementById('editCelulaColider').value = cel.colider_user_id || '';
         document.getElementById('modalEditarCelula').classList.remove('hidden');
