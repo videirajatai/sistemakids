@@ -1445,7 +1445,7 @@
         </div>
         <h3 id="modalTitulo" style="color:var(--primary);"></h3>
         <small id="modalDataPalavra" style="color:var(--text-light);"></small>
-        <a id="btnLinkYoutube" href="#" target="_blank" class="btn-card" style="background:#ff0000; color:white; border:none; padding:10px; margin:15px 0; display:none; gap:8px;"><i class="fab fa-youtube"></i> Assistir</a>
+        <a id="btnLinkYoutube" href="#" target="_blank" class="btn-card hidden" style="background:#ff0000; color:white; border:none; padding:10px; margin:15px 0; display:inline-flex; gap:8px;"><i class="fab fa-youtube"></i> Assistir</a>
         <div id="modalTexto" style="white-space:pre-wrap; line-height:1.7; margin-top:15px;"></div>
     </div>
 </div>
@@ -1540,6 +1540,9 @@
         sessionStorage.setItem('liderSuperiorId', pessoa.superior_id);
         sessionStorage.setItem('usuarioLogado', pessoa.nome || user.email);
         sessionStorage.setItem('loginDigitado', user.email);
+
+        // Ativa o Web Push SEM await (nunca bloquear o login)
+        if (window.VideiraPush) VideiraPush.ativar(supabaseClient);
 
         await carregarTudo();
         inicializarEventos();
@@ -1667,20 +1670,16 @@
                 renderizarAgenda(listaAgenda);
             } catch(e) { renderizarAgenda([]); }
 
-            // 7. Palavras (via Google Script – planilha, aba "palavras", igual ao backup do Supabase)
+            // 7. Palavras (Supabase - rk_palavras, sincronizado do Sistema Videira)
             try {
-                const controllerPal = new AbortController();
-                const timeoutPal = setTimeout(() => controllerPal.abort(), 8000); // nunca trava o restante do carregamento
-                const resPal = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'buscarPalavras', payload: { usuarioAtivo: sessionStorage.getItem('usuarioLogado') } }),
-                    signal: controllerPal.signal
-                });
-                clearTimeout(timeoutPal);
-                const jsonPal = await resPal.json();
-                listaPalavras = (jsonPal && jsonPal.status === 'sucesso') ? (jsonPal.dados || []) : [];
+                const { data: palavrasData, error: palError } = await supabaseClient
+                    .from('rk_palavras')
+                    .select('data, tema, texto, link_youtube')
+                    .order('data', { ascending: false });
+                if (palError) throw palError;
+                listaPalavras = palavrasData || [];
             } catch(e) {
-                console.warn('Palavras (GAS) indisponível ainda:', e);
+                console.warn('Palavras indisponíveis:', e);
                 listaPalavras = [];
             }
             renderizarPalavras(listaPalavras);
@@ -3254,5 +3253,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <source src="https://streaming.vinhafm.com.br/stream" type="audio/mpeg">
     </audio>
 
+    <script src="js/push.js"></script>
+    <script src="js/pwa.js"></script>
 </body>
 </html>

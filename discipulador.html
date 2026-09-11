@@ -958,7 +958,7 @@
         </div>
         <h3 id="modalTitulo" style="color:var(--primary);"></h3>
         <small id="modalData" style="color:#777;"></small>
-        <a id="btnLinkYoutube" href="#" target="_blank" class="btn-card" style="background:#ff0000; color:white; border:none; padding:10px; margin:15px 0; display:none; gap:8px;"><i class="fab fa-youtube"></i> Assistir</a>
+        <a id="btnLinkYoutube" href="#" target="_blank" class="btn-card hidden" style="background:#ff0000; color:white; border:none; padding:10px; margin:15px 0; display:inline-flex; gap:8px;"><i class="fab fa-youtube"></i> Assistir</a>
         <div id="modalTexto" style="white-space:pre-wrap; line-height:1.7; margin-top:15px;"></div>
     </div>
 </div>
@@ -1022,6 +1022,9 @@
         sessionStorage.setItem('discipuladorSuperiorId', pessoa.superior_id);
         sessionStorage.setItem('usuarioLogado', pessoa.nome || user.email);
         sessionStorage.setItem('loginDigitado', user.email);
+
+        // Ativa o Web Push SEM await (nunca bloquear o login)
+        if (window.VideiraPush) VideiraPush.ativar(supabaseClient);
 
         await carregarTudo();
         inicializarEventos();
@@ -2082,5 +2085,7 @@
         <source src="https://streaming.vinhafm.com.br/stream" type="audio/mpeg">
     </audio>
 
+    <script src="js/push.js"></script>
+    <script src="js/pwa.js"></script>
 </body>
 </html>
