@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="config.js"></script>
     <!-- Módulo unificado da Bíblia -->
     <script src="js/biblia.js"></script>
@@ -473,6 +476,63 @@
 
         .hidden { display: none !important; }
 
+        .btn-save {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.95rem;
+        }
+        .btn-save:hover { background: #7a4d5a; transform: translateY(-1px); }
+        .btn-save:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .check-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .check-option {
+            display: block;
+            position: relative;
+            cursor: pointer;
+        }
+        .check-option input { position: absolute; opacity: 0; }
+        .checkmark {
+            display: block;
+            padding: 10px;
+            text-align: center;
+            background: #f8f4f2;
+            border: 1px solid #e6dcd8;
+            border-radius: 10px;
+            color: #7a6a6e;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: 0.2s;
+        }
+        .check-option input:checked ~ .checkmark {
+            background: var(--success-bg);
+            color: var(--success-text);
+            border-color: #b8d9c0;
+        }
+
+        .modal-celula-full {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: white;
+            z-index: 3000;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .modal-celula-full.hidden { display: none; }
+
         .biblia-offcanvas {
             position: fixed;
             top: 0;
@@ -816,11 +876,71 @@
         }
         .licao-acoes { display: flex; gap: 6px; }
 
+        /* --- Ficha de célula (relatório / impressão) --- */
+        .ficha-celula {
+            border: 1px solid #e6dcd8;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 18px;
+            page-break-after: always;
+            page-break-inside: avoid;
+        }
+        .ficha-celula:last-child { page-break-after: auto; }
+        .ficha-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 16px;
+            background: #f9f5f3;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 0.85rem;
+        }
+        .ficha-info strong { color: #555; }
+        .tag { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; }
+        .tag-sim { background: var(--success-bg); color: var(--success-text); }
+        .tag-nao { background: #f8d7da; color: #721c24; }
+
+        /* Cabeçalho/rodapé só aparecem na impressão */
+        .np-print-header, .np-print-footer { display: none; }
+
         @media print {
+            @page { margin: 12mm; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             body * { visibility: hidden; }
             .modal-content, .modal-content * { visibility: visible; }
-            .modal-content { position: absolute; left: 0; top: 0; width: 100%; height: auto; padding: 20px; border-radius: 0; }
-            .btn-close-modal, .btn-card, .nav-menu, .header { display: none !important; }
+            .modal-content {
+                position: absolute; left: 0; top: 0;
+                width: 100%; max-width: 100%;
+                height: auto; max-height: none;
+                padding: 0; margin: 0; border-radius: 0; box-shadow: none;
+            }
+            .btn-close-modal, .btn-card, .nav-menu, .header, .filter-bar { display: none !important; }
+
+            .np-print-header {
+                display: flex !important;
+                align-items: center;
+                gap: 14px;
+                border-bottom: 3px solid var(--primary);
+                padding-bottom: 12px;
+                margin-bottom: 18px;
+            }
+            .np-print-header img { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; }
+            .np-print-title { color: var(--primary); font-size: 20px; font-weight: 800; letter-spacing: 0.5px; }
+            .np-print-subtitle { color: #555; font-size: 12px; margin-top: 2px; }
+            .np-print-footer {
+                display: block !important;
+                margin-top: 24px; padding-top: 10px;
+                border-top: 1px solid #ddd;
+                text-align: center; font-size: 10px; color: #888;
+            }
+
+            h2#tituloRelatorioPersonalizado { color: var(--primary) !important; }
+
+            .table-clean { width: 100% !important; border-collapse: collapse !important; box-shadow: none !important; border-radius: 0 !important; }
+            .table-clean th { background: var(--primary) !important; color: #fff !important; padding: 8px !important; font-size: 11px !important; text-align: left; }
+            .table-clean td { padding: 7px 8px !important; border-bottom: 1px solid #e5e5e5 !important; font-size: 11px !important; }
+            .table-clean tr:nth-child(even) td { background: #faf7f8 !important; }
+            .ficha-tabela tr { page-break-inside: avoid; }
         }
     </style>
 </head>
@@ -907,6 +1027,14 @@
                 <span><i class="fas fa-cross"></i> Status espiritual das crianças</span>
                 <i class="fas fa-chevron-right"></i>
             </button>
+            <button class="report-btn" onclick="exportarRedeExcel()">
+                <span><i class="fas fa-file-excel"></i> Exportar rede em Excel (.xlsx)</span>
+                <i class="fas fa-download"></i>
+            </button>
+            <button class="report-btn" onclick="exportarRedePDF()">
+                <span><i class="fas fa-file-pdf"></i> Exportar rede em PDF</span>
+                <i class="fas fa-download"></i>
+            </button>
         </div>
 
         <div id="modalRelatorioPersonalizado" class="modal-overlay hidden" onclick="fecharModal('modalRelatorioPersonalizado')">
@@ -916,7 +1044,15 @@
                     <h2 id="tituloRelatorioPersonalizado" style="color:var(--primary); margin:0;">Relatório</h2>
                     <button onclick="imprimirRelatorio()" class="btn-card" style="width:auto; padding:8px 15px; background:var(--primary); color:white; border:none;"><i class="fas fa-print"></i> Imprimir</button>
                 </div>
+                <div class="np-print-header">
+                    <img src="logo.png" alt="Rede Kids">
+                    <div>
+                        <div class="np-print-title">Rede Kids • Videira</div>
+                        <div class="np-print-subtitle" id="printReportTitle">Relatório</div>
+                    </div>
+                </div>
                 <div id="conteudoRelatorio"></div>
+                <div class="np-print-footer">Documento gerado pelo sistema Rede Kids • Videira em <span id="printGeradoEm"></span></div>
             </div>
         </div>
     </div>
@@ -1168,6 +1304,176 @@
         </div>
     </div>
 
+    <!-- ============================================================ -->
+    <!-- MODAL CÉLULA (lista de membros / ações) -->
+    <!-- ============================================================ -->
+    <div id="modalCelula" class="modal-celula-full hidden">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--primary); padding-bottom:15px; margin-bottom:20px;">
+            <h2 id="modalCelulaTitulo" style="margin:0; color:var(--primary);"></h2>
+            <button class="btn-close-modal" onclick="fecharModalCelula()" style="position:static;">&times;</button>
+        </div>
+        <div id="celulaLiderInfo" style="margin-bottom:15px; padding:8px 15px; background:#f9f5f3; border-radius:8px; font-size:0.9rem;"></div>
+        <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+            <button class="btn-card" style="background:var(--success-text); color:white; border-color:var(--success-text);" onclick="abrirModalCadastroMembro()"><i class="fas fa-plus"></i> Nova Criança</button>
+            <button class="btn-card" style="background:#fef3c7; color:#92400e; border-color:#fef3c7;" onclick="abrirApascentar()"><i class="fas fa-hands-praying"></i> Apascentar</button>
+            <button class="btn-card" style="background:#e0e7ff; color:#1e40af; border-color:#e0e7ff;" onclick="abrirCriarRelatorio()"><i class="fas fa-clipboard-list"></i> Relatório</button>
+        </div>
+        <div id="gridMembrosCelulaModal" class="member-grid"></div>
+    </div>
+
+    <!-- Modal Cadastro de Criança -->
+    <div id="modalCadastroMembro" class="modal-overlay hidden" onclick="fecharModalCadastroMembro(event)" style="align-items:center;">
+        <div class="modal-content" style="max-width:600px; max-height:90vh; border-radius:20px;" onclick="event.stopPropagation()">
+            <button class="btn-close-modal" onclick="fecharModalCadastroMembro()">&times;</button>
+            <h3 style="color:var(--primary); margin-top:0;">Cadastrar Criança</h3>
+            <form id="formAdicionarMembro">
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:2;"><label>Nome *</label><input type="text" name="nome" required></div>
+                    <div style="flex:1;"><label>Nascimento</label><input type="date" name="nascimento"></div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;"><label>Telefone (responsável)</label><input type="tel" name="telefone" placeholder="(00) 00000-0000"></div>
+                    <div style="flex:1;"><label>Categoria</label>
+                        <select name="categoria">
+                            <option selected>Criança</option>
+                            <option>Líder em Treinamento</option>
+                            <option>Líder</option>
+                            <option>Discipuladora</option>
+                            <option>Pastora</option>
+                        </select>
+                    </div>
+                </div>
+                <input type="hidden" name="celula" id="cadastroModalCelulaHidden">
+
+                <h4 style="margin:15px 0 10px;">Informações dos Pais</h4>
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;">
+                        <label>Nome do Pai</label><input type="text" name="pai_nome" placeholder="Nome">
+                    </div>
+                    <div style="flex:1;">
+                        <label>Pai é crente?</label>
+                        <select name="pai_crente">
+                            <option value="Não">Não</option>
+                            <option value="Sim">Sim</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label>Igreja do Pai</label>
+                    <input type="text" name="pai_igreja" placeholder="Videira, outra, etc.">
+                </div>
+
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;">
+                        <label>Nome da Mãe</label><input type="text" name="mae_nome" placeholder="Nome">
+                    </div>
+                    <div style="flex:1;">
+                        <label>Mãe é crente?</label>
+                        <select name="mae_crente">
+                            <option value="Não">Não</option>
+                            <option value="Sim">Sim</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label>Igreja da Mãe</label>
+                    <input type="text" name="mae_igreja" placeholder="Videira, outra, etc.">
+                </div>
+
+                <h4 style="margin:15px 0 10px;">Marcadores</h4>
+                <div class="check-grid">
+                    <label class="check-option"><input type="checkbox" name="batizado"><span class="checkmark">Batismo</span></label>
+                    <label class="check-option"><input type="checkbox" name="encontro"><span class="checkmark">Encontro</span></label>
+                    <label class="check-option"><input type="checkbox" name="lider_treinamento"><span class="checkmark">Líder em Trein.</span></label>
+                    <label class="check-option"><input type="checkbox" name="frequenta_kids"><span class="checkmark">Frequenta Culto Kids</span></label>
+                </div>
+
+                <div style="display:flex; gap:10px;">
+                    <button type="button" onclick="fecharModalCadastroMembro()" class="btn-card" style="flex:1; padding:10px;">Cancelar</button>
+                    <button type="submit" class="btn-save" style="flex:2;">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Criança -->
+    <div id="modalEditarMembro" class="modal-overlay hidden" onclick="fecharModalEditarMembro(event)" style="align-items:center;">
+        <div class="modal-content" style="max-width:600px; max-height:90vh; border-radius:20px;" onclick="event.stopPropagation()">
+            <button class="btn-close-modal" onclick="fecharModalEditarMembro()">&times;</button>
+            <h3 style="color:var(--primary); margin-top:0;">Editar Criança</h3>
+            <form id="formEditarMembro">
+                <input type="hidden" id="editMembroId">
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:2;"><label>Nome *</label><input type="text" id="editMembroNome" required></div>
+                    <div style="flex:1;"><label>Nascimento</label><input type="date" id="editMembroNasc"></div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;"><label>Telefone</label><input type="tel" id="editMembroTel" placeholder="(00) 00000-0000"></div>
+                    <div style="flex:1;"><label>Célula</label><select id="editMembroCelula"></select></div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;"><label>Categoria</label>
+                        <select id="editMembroCat">
+                            <option>Criança</option>
+                            <option>Líder em Treinamento</option>
+                            <option>Líder</option>
+                            <option>Discipuladora</option>
+                            <option>Pastora</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h4 style="margin:15px 0 10px;">Pais</h4>
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;"><label>Pai</label><input type="text" id="editMembroPaiNome" placeholder="Nome"></div>
+                    <div style="flex:1;"><label>Crente?</label><select id="editMembroPaiCrente"><option value="Não">Não</option><option value="Sim">Sim</option></select></div>
+                </div>
+                <div style="margin-bottom:12px;"><label>Igreja do Pai</label><input type="text" id="editMembroPaiIgreja"></div>
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;"><label>Mãe</label><input type="text" id="editMembroMaeNome" placeholder="Nome"></div>
+                    <div style="flex:1;"><label>Crente?</label><select id="editMembroMaeCrente"><option value="Não">Não</option><option value="Sim">Sim</option></select></div>
+                </div>
+                <div style="margin-bottom:12px;"><label>Igreja da Mãe</label><input type="text" id="editMembroMaeIgreja"></div>
+
+                <div class="check-grid">
+                    <label class="check-option"><input type="checkbox" id="editMembroBatizado"><span class="checkmark">Batismo</span></label>
+                    <label class="check-option"><input type="checkbox" id="editMembroEncontro"><span class="checkmark">Encontro</span></label>
+                    <label class="check-option"><input type="checkbox" id="editMembroLiderTreinamento"><span class="checkmark">Líder em Trein.</span></label>
+                    <label class="check-option"><input type="checkbox" id="editMembroFrequentaKids"><span class="checkmark">Culto Kids</span></label>
+                </div>
+
+                <div style="display:flex; gap:10px;">
+                    <button type="button" onclick="fecharModalEditarMembro()" class="btn-card" style="flex:1; padding:10px;">Cancelar</button>
+                    <button type="submit" class="btn-save" style="flex:2;">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Criar Relatório -->
+    <div id="modalCriarRelatorio" class="modal-overlay hidden" onclick="fecharCriarRelatorio()" style="align-items:center;">
+        <div class="modal-content" style="max-width:600px; max-height:90vh; border-radius:20px;" onclick="event.stopPropagation()">
+            <button class="btn-close-modal" onclick="fecharCriarRelatorio()">&times;</button>
+            <h3 style="color:var(--primary); margin-top:0;">Relatório da Célula</h3>
+            <div style="margin-bottom:15px; padding:10px; background:#f9f5f3; border-radius:8px;">
+                <strong>Célula:</strong> <span id="novoRelCelulaNome"></span>
+            </div>
+            <form id="formCriarRelatorio">
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;"><label>Data</label><input type="date" id="novoRelData" required></div>
+                </div>
+                <label>Crianças Presentes</label>
+                <div id="checklistMembrosNovoRel" style="max-height:200px; overflow-y:auto; border:1px solid #e6dcd8; border-radius:8px; padding:10px; margin-bottom:15px;"></div>
+                <label>Quebra-Gelo</label><input type="text" id="novoRelQuebraGelo">
+                <label>Palavra</label><input type="text" id="novoRelPalavra">
+                <label>Louvor</label><input type="text" id="novoRelLouvor">
+                <label>Lanche</label><input type="text" id="novoRelLanche">
+                <label>Observações</label><textarea id="novoRelObservacoes" rows="3"></textarea>
+                <button type="submit" id="btnSalvarNovoRelatorio" class="btn-save">Salvar Relatório</button>
+            </form>
+        </div>
+    </div>
+
 </div>
 
 <!-- ================================================================ -->
@@ -1199,6 +1505,8 @@
     let listaApostilas = [];
     let apostilaAdminAtual = null;
     let licoesDaApostilaAdmin = [];
+    let celulaAtiva = null;
+    let membrosDaCelulaAtiva = [];
 
     // ================================================================
     //  AUTENTICAÇÃO
@@ -1432,7 +1740,7 @@
             const card = document.createElement('div');
             card.className = 'celula-card';
             card.innerHTML = `
-                <div class="celula-info" onclick="abrirDetalhesCelula('${cel.id}')">
+                <div class="celula-info" onclick="abrirModalCelula('${cel.id}')">
                     <div class="celula-nome">${cel.nome}</div>
                     <div class="celula-detalhe"><i class="fas fa-user"></i> Líder: ${nomeLider}</div>
                     <div class="celula-detalhe"><i class="fas fa-user-tie"></i> Discipuladora: ${nomeSupervisor}</div>
@@ -1441,7 +1749,7 @@
                     <div class="celula-detalhe"><i class="fas fa-map-marker-alt"></i> ${cel.endereco || 'Endereço não cadastrado'}</div>
                     ${cel.acompanha_celula_adulto === 'Sim' ? '<div class="celula-detalhe"><i class="fas fa-link"></i> Acompanha célula de adultos</div>' : ''}
                 </div>
-                <div class="badge-membros" onclick="event.stopPropagation(); abrirDetalhesCelula('${cel.id}')">
+                <div class="badge-membros" onclick="event.stopPropagation(); abrirModalCelula('${cel.id}')">
                     <i class="fas fa-chevron-right"></i>
                 </div>
             `;
@@ -1465,51 +1773,284 @@
     // ================================================================
     //  DETALHES DA CÉLULA (modal)
     // ================================================================
-    async function abrirDetalhesCelula(celulaId) {
+    async function abrirModalCelula(celulaId) {
         const cel = todasCelulas.find(c => c.id === celulaId);
         if (!cel) return;
+        celulaAtiva = cel;
+        document.getElementById('modalCelulaTitulo').innerText = cel.nome;
+        document.getElementById('celulaLiderInfo').innerHTML =
+            `<i class="fas fa-user"></i> <strong>Líder:</strong> ${mapaNomes[cel.lider_user_id] || 'Não definido'} &nbsp;|&nbsp; ` +
+            `<i class="fas fa-user-tie"></i> <strong>Discipuladora:</strong> ${mapaNomes[cel.supervisor_user_id] || 'Não definido'}` +
+            (cel.colider_user_id ? ` &nbsp;|&nbsp; <i class="fas fa-user-graduate"></i> <strong>Líder em Trein.:</strong> ${mapaNomes[cel.colider_user_id] || 'Não definido'}` : '') +
+            (cel.dia_horario ? `<br><i class="far fa-calendar-alt"></i> <strong>Dia/Horário:</strong> ${cel.dia_horario}` : '') +
+            (cel.endereco ? ` &nbsp;|&nbsp; <i class="fas fa-map-marker-alt"></i> <strong>Endereço:</strong> ${cel.endereco}` : '');
+        document.getElementById('modalCelula').classList.remove('hidden');
 
-        // Buscar membros da célula
-        const { data: membros } = await supabaseClient
+        await carregarMembrosDaCelula(celulaId);
+        renderizarMembrosCelulaModal(membrosDaCelulaAtiva);
+    }
+
+    function fecharModalCelula() {
+        document.getElementById('modalCelula').classList.add('hidden');
+    }
+
+    async function carregarMembrosDaCelula(celulaId) {
+        const { data } = await supabaseClient
             .from('rk_pessoas')
             .select('*')
             .eq('celula_id', celulaId)
             .eq('arquivado', false)
             .order('nome');
+        membrosDaCelulaAtiva = data || [];
+        return membrosDaCelulaAtiva;
+    }
 
-        // Montar modal simples
-        const container = document.createElement('div');
-        container.className = 'modal-overlay';
-        container.id = 'modalDetalhesCelula';
-        container.style.alignItems = 'center';
-        container.innerHTML = `
-            <div class="modal-content" style="max-width:600px; max-height:90vh; border-radius:20px;" onclick="event.stopPropagation()">
-                <button class="btn-close-modal" onclick="fecharModal('modalDetalhesCelula')">&times;</button>
-                <h3 style="color:var(--primary); margin-top:0;">${cel.nome}</h3>
-                <div style="margin-bottom:15px;">
-                    <p><strong>Líder:</strong> ${mapaNomes[cel.lider_user_id] || 'Não definido'}</p>
-                    <p><strong>Discipuladora:</strong> ${mapaNomes[cel.supervisor_user_id] || 'Não definido'}</p>
-                    ${cel.colider_user_id ? `<p><strong>Líder em Treinamento:</strong> ${mapaNomes[cel.colider_user_id]}</p>` : ''}
-                    <p><strong>Dia/Horário:</strong> ${cel.dia_horario || 'Não definido'}</p>
-                    <p><strong>Endereço:</strong> ${cel.endereco || 'Não definido'}</p>
-                    <p><strong>Anfitrião:</strong> ${cel.anfitriao || 'Não definido'}</p>
-                    <p><strong>Data de Início:</strong> ${cel.data_inicio || 'Não definida'}</p>
-                    <p><strong>Acompanha célula de adultos?</strong> ${cel.acompanha_celula_adulto || 'Não'}</p>
-                </div>
-                <h4 style="margin:15px 0 10px;">Crianças (${membros ? membros.length : 0})</h4>
-                <div style="max-height:300px; overflow-y:auto;">
-                    ${membros && membros.length ? membros.map(m => `
-                        <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0ecea;">
-                            <span>${m.nome}</span>
-                            <span style="font-size:0.8rem; color:var(--text-light);">${m.categoria || 'Criança'}</span>
+    function renderizarMembrosCelulaModal(lista) {
+        const grid = document.getElementById('gridMembrosCelulaModal');
+        grid.innerHTML = '';
+        if (!lista || lista.length === 0) {
+            grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#999;">Nenhuma criança nesta célula.</p>';
+            return;
+        }
+        const check = val => (val === 'Sim' || val === true) ? 'active' : '';
+        const fmtData = d => { if (!d) return ''; if (d.includes('/')) return d; const p = d.split('-'); return p.length === 3 ? `${p[2]}/${p[1]}` : d; };
+
+        lista.forEach(m => {
+            const idade = m.nascimento ? calcularIdade(m.nascimento) : '';
+            const tel = String(m.telefone || '').replace(/\D/g, '');
+            const btnZap = tel.length > 8 ? `<a href="https://wa.me/55${tel}" target="_blank" class="btn-card btn-zap"><i class="fab fa-whatsapp"></i></a>` : '';
+            const categoria = m.categoria || 'Criança';
+            grid.innerHTML += `
+                <div class="member-card">
+                    <div class="card-header">
+                        <div><h4 class="card-name">${m.nome}</h4><span class="cat-badge ${categoria}">${categoria}</span></div>
+                        <div class="card-actions">
+                            <button onclick="abrirEditarMembro('${m.id}')" class="btn-card"><i class="fas fa-edit"></i></button>
+                            <button onclick="arquivarMembro('${m.id}')" class="btn-card" style="color:var(--danger-text);"><i class="fas fa-archive"></i></button>
+                            ${btnZap}
                         </div>
-                    `).join('') : '<p style="color:#999;">Nenhuma criança cadastrada.</p>'}
-                </div>
-                <button onclick="fecharModal('modalDetalhesCelula')" class="btn-save" style="background:#555; margin-top:15px;">Fechar</button>
-            </div>
-        `;
-        document.body.appendChild(container);
-        container.classList.remove('hidden');
+                    </div>
+                    <div class="card-info">
+                        <i class="fas fa-birthday-cake"></i> ${fmtData(m.nascimento)} ${idade ? `(${idade} anos)` : ''}
+                    </div>
+                    <div class="status-row">
+                        <span class="status-pill ${check(m.batizado)}">Batismo</span>
+                        <span class="status-pill ${check(m.encontro)}">Encontro</span>
+                        <span class="status-pill ${check(m.lider_treinamento)}">Líder em Trein.</span>
+                        <span class="status-pill ${check(m.frequenta_culto_kids)}">Culto Kids</span>
+                    </div>
+                    <div style="font-size:0.7rem; color:var(--text-light); margin-top:4px; border-top:1px solid #f0ecea; padding-top:4px;">
+                        <i class="fas fa-user-friends"></i> Pai: ${m.pai_nome || '-'} ${m.pai_crente === 'Sim' ? '🙏' : ''} | Mãe: ${m.mae_nome || '-'} ${m.mae_crente === 'Sim' ? '🙏' : ''}
+                    </div>
+                </div>`;
+        });
+    }
+
+    function calcularIdade(nascimento) {
+        if (!nascimento) return null;
+        const hoje = new Date();
+        const nasc = new Date(nascimento + 'T00:00:00');
+        let idade = hoje.getFullYear() - nasc.getFullYear();
+        const mes = hoje.getMonth() - nasc.getMonth();
+        if (mes < 0 || (mes === 0 && hoje.getDate() < nasc.getDate())) idade--;
+        return idade;
+    }
+
+    // ================================================================
+    //  CADASTRO DE MEMBRO (CRIANÇA)
+    // ================================================================
+    function abrirModalCadastroMembro() {
+        if (!celulaAtiva) { alert("Selecione uma célula primeiro."); return; }
+        document.getElementById('modalCadastroMembro').classList.remove('hidden');
+        document.getElementById('formAdicionarMembro').reset();
+        document.getElementById('cadastroModalCelulaHidden').value = celulaAtiva.id;
+    }
+
+    function fecharModalCadastroMembro(e) {
+        if (!e || e.target.classList.contains('modal-overlay') || e.target.classList.contains('btn-close-modal')) {
+            document.getElementById('modalCadastroMembro').classList.add('hidden');
+        }
+    }
+
+    // ================================================================
+    //  EDIÇÃO DE MEMBRO (CRIANÇA)
+    // ================================================================
+    async function abrirEditarMembro(id) {
+        const { data: m, error } = await supabaseClient
+            .from('rk_pessoas')
+            .select('*')
+            .eq('id', id)
+            .single();
+        if (error || !m) { alert("Membro não encontrado."); return; }
+
+        document.getElementById('editMembroId').value = m.id;
+        document.getElementById('editMembroNome').value = m.nome || '';
+        document.getElementById('editMembroNasc').value = m.nascimento || '';
+        document.getElementById('editMembroTel').value = m.telefone || '';
+        document.getElementById('editMembroPaiNome').value = m.pai_nome || '';
+        document.getElementById('editMembroPaiCrente').value = m.pai_crente || 'Não';
+        document.getElementById('editMembroPaiIgreja').value = m.pai_igreja || '';
+        document.getElementById('editMembroMaeNome').value = m.mae_nome || '';
+        document.getElementById('editMembroMaeCrente').value = m.mae_crente || 'Não';
+        document.getElementById('editMembroMaeIgreja').value = m.mae_igreja || '';
+
+        const selCel = document.getElementById('editMembroCelula');
+        selCel.innerHTML = '<option value="">Selecione uma célula</option>';
+        todasCelulas.forEach(c => {
+            const selected = (c.id === m.celula_id) ? 'selected' : '';
+            selCel.innerHTML += `<option value="${c.id}" ${selected}>${c.nome}</option>`;
+        });
+
+        document.getElementById('editMembroCat').value = m.categoria || 'Criança';
+        document.getElementById('editMembroBatizado').checked = (m.batizado === 'Sim');
+        document.getElementById('editMembroEncontro').checked = (m.encontro === 'Sim');
+        document.getElementById('editMembroLiderTreinamento').checked = (m.lider_treinamento === 'Sim');
+        document.getElementById('editMembroFrequentaKids').checked = (m.frequenta_culto_kids === 'Sim');
+
+        document.getElementById('modalEditarMembro').classList.remove('hidden');
+    }
+
+    function fecharModalEditarMembro(e) {
+        if (!e || e.target.classList.contains('modal-overlay') || e.target.classList.contains('btn-close-modal')) {
+            document.getElementById('modalEditarMembro').classList.add('hidden');
+        }
+    }
+
+    // ================================================================
+    //  ARQUIVAR MEMBRO
+    // ================================================================
+    async function arquivarMembro(id) {
+        if (!confirm("Arquivar esta criança?")) return;
+        await supabaseClient.from('rk_pessoas').update({ arquivado: true }).eq('id', id);
+        await registrarLogAcao(`Arquivou criança ID ${id}`);
+        await carregarTudo();
+        if (celulaAtiva) await abrirModalCelula(celulaAtiva.id);
+    }
+
+    // ================================================================
+    //  RELATÓRIO DA CÉLULA (criar)
+    // ================================================================
+    function abrirCriarRelatorio() {
+        if (!celulaAtiva) { alert("Selecione uma célula."); return; }
+        document.getElementById('novoRelCelulaNome').innerText = celulaAtiva.nome;
+        document.getElementById('novoRelData').valueAsDate = new Date();
+        prepararChecklistRelatorio();
+        document.getElementById('modalCriarRelatorio').classList.remove('hidden');
+    }
+
+    function fecharCriarRelatorio() {
+        document.getElementById('modalCriarRelatorio').classList.add('hidden');
+    }
+
+    function prepararChecklistRelatorio() {
+        const container = document.getElementById('checklistMembrosNovoRel');
+        container.innerHTML = '';
+        const membros = (membrosDaCelulaAtiva || []).slice();
+        if (!membros.length) {
+            container.innerHTML = '<p style="color:#999;">Nenhuma criança cadastrada.</p>';
+            return;
+        }
+        membros.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+        membros.forEach(m => {
+            const div = document.createElement('div');
+            div.style.marginBottom = '6px';
+            div.innerHTML = `<label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.9rem;">
+                <input type="checkbox" name="presentes" value="${m.id}" style="width:auto; margin:0;">
+                <span>${m.nome}</span>
+            </label>`;
+            container.appendChild(div);
+        });
+    }
+
+    async function salvarRelatorio(e) {
+        e.preventDefault();
+        if (!celulaAtiva) { alert("Nenhuma célula selecionada."); return; }
+        const btn = document.getElementById('btnSalvarNovoRelatorio');
+        btn.disabled = true;
+        btn.innerText = 'Salvando...';
+
+        const data = document.getElementById('novoRelData').value;
+        const dados = {
+            data: data,
+            celula_id: celulaAtiva.id,
+            quebra_gelo: document.getElementById('novoRelQuebraGelo').value,
+            palavra: document.getElementById('novoRelPalavra').value,
+            louvor: document.getElementById('novoRelLouvor').value,
+            lanche: document.getElementById('novoRelLanche').value,
+            observacoes: document.getElementById('novoRelObservacoes').value
+        };
+
+        try {
+            const { data: rel, error: insertError } = await supabaseClient
+                .from('rk_relatorios')
+                .insert([dados])
+                .select();
+            if (insertError) throw insertError;
+            const relatorioId = rel?.[0]?.id;
+            if (!relatorioId) throw new Error("Erro ao obter ID do relatório.");
+
+            const checkboxes = document.querySelectorAll('#checklistMembrosNovoRel input[name="presentes"]:checked');
+            const presentesIds = Array.from(checkboxes).map(cb => cb.value);
+            const presencas = (membrosDaCelulaAtiva || []).map(m => ({
+                relatorio_id: relatorioId,
+                membro_id: m.id,
+                presente: presentesIds.includes(m.id)
+            }));
+            if (presencas.length) await supabaseClient.from('rk_presencas').insert(presencas);
+
+            await registrarLogAcao(`Lançou relatório da célula ${celulaAtiva.nome} (${data})`);
+            alert("Relatório salvo!");
+            document.getElementById('formCriarRelatorio').reset();
+            fecharCriarRelatorio();
+            await carregarTudo();
+        } catch (err) {
+            alert("Erro: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = 'Salvar Relatório';
+        }
+    }
+
+    // ================================================================
+    //  APASCENTAR (FALTOSOS)
+    // ================================================================
+    async function abrirApascentar() {
+        if (!celulaAtiva) return;
+        const faltosos = await calcularFaltosos();
+        if (faltosos.length === 0) {
+            alert("Nenhuma criança faltosa nos últimos 30 dias.");
+            return;
+        }
+        const msg = faltosos.map(m => `${m.nome} - ${m.faltas} falta(s)`).join('\n');
+        alert("Crianças com faltas nos últimos 30 dias:\n" + msg);
+    }
+
+    async function calcularFaltosos() {
+        const trintaDiasAtras = new Date();
+        trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
+        const dataLimite = trintaDiasAtras.toISOString().split('T')[0];
+
+        const { data: rels } = await supabaseClient
+            .from('rk_relatorios')
+            .select('id')
+            .eq('celula_id', celulaAtiva.id)
+            .gte('data', dataLimite);
+
+        if (!rels || !rels.length) return [];
+        const ids = rels.map(r => r.id);
+        const { data: presencas } = await supabaseClient
+            .from('rk_presencas')
+            .select('membro_id, presente')
+            .in('relatorio_id', ids);
+
+        const faltasMap = {};
+        presencas?.forEach(p => {
+            if (!p.presente) {
+                faltasMap[p.membro_id] = (faltasMap[p.membro_id] || 0) + 1;
+            }
+        });
+        const membros = membrosDaCelulaAtiva || [];
+        return membros.filter(m => faltasMap[m.id] > 0).map(m => ({ ...m, faltas: faltasMap[m.id] }));
     }
 
     // ================================================================
@@ -1647,16 +2188,90 @@
     }
 
     function imprimirRelatorio() {
+        const el = document.getElementById('printGeradoEm');
+        if (el) el.innerText = new Date().toLocaleString();
         window.print();
     }
 
     function mostrarRelatorioPersonalizado(titulo, conteudoHTML) {
         document.getElementById('tituloRelatorioPersonalizado').innerText = titulo;
+        document.getElementById('printReportTitle').innerText = titulo;
         document.getElementById('conteudoRelatorio').innerHTML = conteudoHTML;
         document.getElementById('modalRelatorioPersonalizado').classList.remove('hidden');
     }
 
-    // 1. Supervisão Geral
+    // ================================================================
+    //  EXPORTAÇÃO DA REDE (Excel / PDF)
+    // ================================================================
+    function obterPessoasRede() {
+        const ordem = { 'pastora': 1, 'discipuladora': 2, 'lider': 3, 'lider em treinamento': 4, 'crianca': 5 };
+        return todasPessoas
+            .filter(p => !p.arquivado)
+            .slice()
+            .sort((a, b) => {
+                const oa = ordem[normalizarCategoria(a.categoria)] || 99;
+                const ob = ordem[normalizarCategoria(b.categoria)] || 99;
+                if (oa !== ob) return oa - ob;
+                return (a.nome || '').localeCompare(b.nome || '');
+            });
+    }
+
+    function exportarRedeExcel() {
+        if (typeof XLSX === 'undefined') { alert('Biblioteca de Excel não carregada.'); return; }
+        const lista = obterPessoasRede();
+        if (!lista.length) { alert('Nenhum dado para exportar.'); return; }
+        const linhas = lista.map(p => ({
+            Nome: p.nome || '',
+            Categoria: p.categoria || '',
+            'Célula': mapaCelulas[p.celula_id] || '',
+            Nascimento: p.nascimento || '',
+            WhatsApp: p.telefone || '',
+            Batismo: p.batizado || 'Não',
+            Encontro: p.encontro || 'Não',
+            'Líder em Trein.': p.lider_treinamento || 'Não',
+            'Culto Kids': p.frequenta_culto_kids || 'Não'
+        }));
+        const ws = XLSX.utils.json_to_sheet(linhas);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Rede Kids');
+        XLSX.writeFile(wb, `Rede_Kids_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        registrarLogAcao(`Exportou a rede em Excel (${lista.length} registros)`);
+    }
+
+    async function exportarRedePDF() {
+        if (!window.jspdf || !window.jspdf.jsPDF) { alert('Biblioteca de PDF não carregada.'); return; }
+        const lista = obterPessoasRede();
+        if (!lista.length) { alert('Nenhum dado para exportar.'); return; }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4');
+        try {
+            const resp = await fetch('logo.png');
+            const blob = await resp.blob();
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            await new Promise(r => { reader.onload = r; });
+            doc.addImage(reader.result, 'PNG', 14, 10, 16, 16);
+        } catch (e) { /* logo opcional */ }
+        doc.setFontSize(16);
+        doc.text('Rede Kids - Videira', 34, 16);
+        doc.setFontSize(9);
+        doc.text(`Gerado em ${new Date().toLocaleString()} | Total: ${lista.length}`, 34, 22);
+        doc.autoTable({
+            head: [['Nome', 'Categoria', 'Célula', 'Nascimento', 'WhatsApp', 'Bat.', 'Enc.', 'Líder Trein.', 'Kids']],
+            body: lista.map(p => [
+                p.nome || '', p.categoria || '', mapaCelulas[p.celula_id] || '', p.nascimento || '', p.telefone || '',
+                p.batizado || 'Não', p.encontro || 'Não', p.lider_treinamento || 'Não', p.frequenta_culto_kids || 'Não'
+            ]),
+            startY: 30,
+            theme: 'grid',
+            headStyles: { fillColor: [128, 0, 32] },
+            styles: { fontSize: 8 }
+        });
+        doc.save(`Rede_Kids_${new Date().toISOString().slice(0, 10)}.pdf`);
+        registrarLogAcao(`Exportou a rede em PDF (${lista.length} registros)`);
+    }
+
+    // 1. Supervisão Geral (Fichas das Células)
     async function gerarSupervisaoGeral() {
         // Buscar dados atualizados
         const { data: celulas } = await supabaseClient.from('rk_celulas').select('*');
@@ -1677,48 +2292,64 @@
             }
         });
 
-        let html = `
-        <div style="font-family: 'Inter', sans-serif;">
-            <div style="text-align:center; margin-bottom:25px;">
-                <h1 style="color:var(--primary);">Supervisão Geral – Rede Kids</h1>
-                <p>Gerado em ${new Date().toLocaleString()}</p>
-            </div>
-        `;
+        if (!celulas || celulas.length === 0) {
+            mostrarRelatorioPersonalizado('Fichas das Células', '<p style="text-align:center; color:#999;">Nenhuma célula cadastrada.</p>');
+            registrarLogAcao('Gerou Fichas das Células (nenhuma célula)');
+            return;
+        }
+
+        const simNao = v => `<span class="tag ${v === 'Sim' ? 'tag-sim' : 'tag-nao'}">${v === 'Sim' ? 'Sim' : 'Não'}</span>`;
+
+        let html = '';
         celulas.forEach(cel => {
             const lider = mapaNomes[cel.lider_user_id] || 'Não definido';
             const supervisor = mapaNomes[cel.supervisor_user_id] || 'Não definido';
-            const colider = mapaNomes[cel.colider_user_id] || '';
-            const membrosCel = membrosPorCelula[cel.id] || [];
+            const colider = mapaNomes[cel.colider_user_id] || '__________________';
+            const membrosCel = (membrosPorCelula[cel.id] || [])
+                .slice()
+                .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+
             html += `
-                <div style="border:1px solid #e6dcd8; border-radius:12px; padding:20px; margin-bottom:20px; page-break-inside:avoid;">
-                    <h3 style="color:var(--primary); margin:0 0 10px 0;">${cel.nome}</h3>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:15px; font-size:0.9rem;">
-                        <div><strong>Líder:</strong> ${lider}</div>
-                        <div><strong>Discipuladora:</strong> ${supervisor}</div>
-                        ${colider ? `<div><strong>Líder em Trein.:</strong> ${colider}</div>` : ''}
+                <div class="ficha-celula">
+                    <div class="ficha-info">
+                        <div><strong>Nome da Célula:</strong> ${cel.nome || '-'}</div>
                         <div><strong>Dia/Horário:</strong> ${cel.dia_horario || '-'}</div>
-                        <div><strong>Endereço:</strong> ${cel.endereco || '-'}</div>
-                        <div><strong>Anfitrião:</strong> ${cel.anfitriao || '-'}</div>
-                        <div><strong>Data de Início:</strong> ${cel.data_inicio || '-'}</div>
-                        <div><strong>Acompanha adultos:</strong> ${cel.acompanha_celula_adulto || 'Não'}</div>
+                        <div><strong>Discipuladora:</strong> ${supervisor}</div>
+                        <div><strong>Líder:</strong> ${lider}</div>
+                        <div><strong>Líder em Treinamento:</strong> ${colider}</div>
+                        <div><strong>Anfitrião:</strong> ${cel.anfitriao || '__________________'}</div>
+                        <div style="grid-column:1/-1;"><strong>Endereço:</strong> ${cel.endereco || '-'}</div>
                     </div>
-                    <h4 style="margin:10px 0;">Membros (${membrosCel.length})</h4>
-                    ${membrosCel.length ? `
-                        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:8px;">
-                            ${membrosCel.map(m => `
-                                <div style="background:#f9f5f3; padding:6px 10px; border-radius:8px;">
-                                    ${m.nome} ${m.batizado === 'Sim' ? '🕊️' : ''}
-                                    <span style="font-size:0.7rem; color:var(--text-light);">${m.categoria || ''}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : '<p style="color:#999;">Nenhuma criança cadastrada.</p>'}
+                    <h4 style="color:var(--primary); margin:14px 0 8px;">Lista de Crianças (${membrosCel.length})</h4>
+                    <table class="table-clean ficha-tabela">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Categoria</th>
+                                <th>Batismo</th>
+                                <th>Encontro</th>
+                                <th>Líder em Trein.</th>
+                                <th>Culto Kids</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${membrosCel.length ? membrosCel.map(m => `
+                                <tr>
+                                    <td><strong>${m.nome || 'Sem nome'}</strong></td>
+                                    <td>${m.categoria || 'Criança'}</td>
+                                    <td>${simNao(m.batizado)}</td>
+                                    <td>${simNao(m.encontro)}</td>
+                                    <td>${simNao(m.lider_treinamento)}</td>
+                                    <td>${simNao(m.frequenta_culto_kids)}</td>
+                                </tr>
+                            `).join('') : '<tr><td colspan="6" style="text-align:center; color:#999;">Nenhuma criança cadastrada.</td></tr>'}
+                        </tbody>
+                    </table>
                 </div>
             `;
         });
-        html += '</div>';
-        mostrarRelatorioPersonalizado('Supervisão Geral – Fichas das Células', html);
-        registrarLogAcao('Gerou Supervisão Geral');
+        mostrarRelatorioPersonalizado('Fichas das Células', html);
+        registrarLogAcao('Gerou as Fichas das Células');
     }
 
     // 2. Líderes sem relatório na semana
@@ -1798,35 +2429,72 @@
     }
 
     // 4. Queda de frequência
-    function abrirRelatorioQuedaFrequencia() {
-        const ultimosRelatorios = {};
+    async function abrirRelatorioQuedaFrequencia() {
+        mostrarRelatorioPersonalizado('Células com queda de frequência', '<p style="text-align:center; color:#999;">Carregando...</p>');
+        registrarLogAcao('Visualizou relatório de queda de frequência');
+
+        // Agrupa os relatórios por célula, pegando os 4 mais recentes de cada uma
+        const relatoriosPorCelula = {};
         todosRelatorios.forEach(r => {
-            if (!ultimosRelatorios[r.celula_id]) ultimosRelatorios[r.celula_id] = [];
-            ultimosRelatorios[r.celula_id].push(r);
+            if (!relatoriosPorCelula[r.celula_id]) relatoriosPorCelula[r.celula_id] = [];
+            relatoriosPorCelula[r.celula_id].push(r);
         });
 
-        const resultado = [];
-        Object.entries(ultimosRelatorios).forEach(([celulaId, rels]) => {
+        const idsRelevantes = [];
+        const relatoriosUsados = {};
+        Object.entries(relatoriosPorCelula).forEach(([celulaId, rels]) => {
             rels.sort((a, b) => new Date(b.data) - new Date(a.data));
             const ultimos4 = rels.slice(0, 4);
             if (ultimos4.length >= 4) {
-                // Buscar contagem de presentes para cada relatório
-                const medias = ultimos4.map(r => {
-                    // A contagem será obtida via presencas, mas como não temos aqui, usamos um placeholder
-                    // Idealmente buscaríamos as presenças, mas para simplificar, usamos 0
-                    // Vamos buscar presenças para cada relatório
-                    return 0;
-                });
-                // Como não temos a contagem de presentes aqui, vou pular essa parte e mostrar uma mensagem
-                // Na prática, seria necessário buscar as presenças de cada relatório.
-                // Vou deixar um placeholder.
+                relatoriosUsados[celulaId] = ultimos4;
+                ultimos4.forEach(r => idsRelevantes.push(r.id));
             }
         });
 
-        // Versão simplificada: mostramos uma mensagem informando que a funcionalidade está em desenvolvimento
-        mostrarRelatorioPersonalizado('Células com queda de frequência', 
-            '<p style="text-align:center; color:#999;">Funcionalidade em desenvolvimento. Em breve será possível visualizar as células com queda de frequência.</p>');
-        registrarLogAcao('Visualizou relatório de queda de frequência');
+        const container = document.getElementById('conteudoRelatorio');
+        if (idsRelevantes.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:var(--success-text);">Nenhuma célula com histórico suficiente (mínimo 4 relatórios) para análise.</p>';
+            return;
+        }
+
+        // Busca as presenças reais na tabela rk_presencas
+        const { data: presencas, error } = await supabaseClient
+            .from('rk_presencas')
+            .select('relatorio_id, presente')
+            .in('relatorio_id', idsRelevantes);
+
+        if (error) {
+            container.innerHTML = '<p style="text-align:center; color:var(--danger-text);">Erro ao carregar presenças.</p>';
+            return;
+        }
+
+        const presentesPorRelatorio = {};
+        presencas?.forEach(p => {
+            if (p.presente) presentesPorRelatorio[p.relatorio_id] = (presentesPorRelatorio[p.relatorio_id] || 0) + 1;
+        });
+
+        const resultado = [];
+        Object.entries(relatoriosUsados).forEach(([celulaId, ultimos4]) => {
+            const medias = ultimos4.map(r => presentesPorRelatorio[r.id] || 0);
+            const mediaInicial = (medias[3] + medias[2]) / 2;
+            const mediaFinal = (medias[1] + medias[0]) / 2;
+            if (mediaInicial > 0 && mediaFinal < mediaInicial * 0.7) {
+                resultado.push({
+                    nomeCelula: mapaCelulas[celulaId] || 'Célula não encontrada',
+                    mediaInicial: mediaInicial.toFixed(1),
+                    mediaFinal: mediaFinal.toFixed(1),
+                    queda: (((mediaInicial - mediaFinal) / mediaInicial) * 100).toFixed(0)
+                });
+            }
+        });
+
+        if (resultado.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:var(--success-text);">Nenhuma célula com queda significativa de frequência.</p>';
+        } else {
+            container.innerHTML = `<table class="table-clean"><thead><tr><th>Célula</th><th>Média Antiga</th><th>Média Recente</th><th>Queda %</th></tr></thead><tbody>
+                ${resultado.map(r => `<tr><td>${r.nomeCelula}</td><td>${r.mediaInicial}</td><td>${r.mediaFinal}</td><td style="color:var(--danger-text);">${r.queda}%</td></tr>`).join('')}
+            </tbody></table>`;
+        }
     }
 
     // 5. Células sem líder em treinamento
@@ -2435,6 +3103,100 @@
                 }
             };
         }
+
+        // --- Cadastro de criança (modal da célula) ---
+        const formAdd = document.getElementById('formAdicionarMembro');
+        if (formAdd) {
+            formAdd.onsubmit = async function(e) {
+                e.preventDefault();
+                if (!celulaAtiva) { alert("Nenhuma célula selecionada."); return; }
+                const btn = this.querySelector('button[type="submit"]');
+                btn.disabled = true;
+                btn.innerText = 'Salvando...';
+                const dados = {
+                    nome: this.nome.value,
+                    nascimento: this.nascimento.value || null,
+                    telefone: this.telefone.value,
+                    celula_id: celulaAtiva.id,
+                    categoria: this.categoria.value,
+                    batizado: this.batizado.checked ? 'Sim' : 'Não',
+                    encontro: this.encontro.checked ? 'Sim' : 'Não',
+                    lider_treinamento: this.lider_treinamento.checked ? 'Sim' : 'Não',
+                    frequenta_culto_kids: this.frequenta_kids.checked ? 'Sim' : 'Não',
+                    pai_nome: this.pai_nome.value || null,
+                    pai_crente: this.pai_crente.value || 'Não',
+                    pai_igreja: this.pai_igreja.value || null,
+                    mae_nome: this.mae_nome.value || null,
+                    mae_crente: this.mae_crente.value || 'Não',
+                    mae_igreja: this.mae_igreja.value || null,
+                    arquivado: false
+                };
+                try {
+                    const { error } = await supabaseClient.from('rk_pessoas').insert([dados]);
+                    if (error) throw error;
+                    await registrarLogAcao(`Cadastrou novo membro: ${dados.nome}`);
+                    alert('Membro cadastrado!');
+                    this.reset();
+                    fecharModalCadastroMembro();
+                    await carregarMembrosDaCelula(celulaAtiva.id);
+                    renderizarMembrosCelulaModal(membrosDaCelulaAtiva);
+                    await carregarTudo();
+                } catch (err) {
+                    alert('Erro: ' + err.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = 'Salvar';
+                }
+            };
+        }
+
+        // --- Edição de criança (modal da célula) ---
+        const formEdit = document.getElementById('formEditarMembro');
+        if (formEdit) {
+            formEdit.onsubmit = async function(e) {
+                e.preventDefault();
+                const id = document.getElementById('editMembroId').value;
+                if (!id) { alert('ID do membro não encontrado.'); return; }
+                const btn = this.querySelector('button[type="submit"]');
+                btn.disabled = true;
+                btn.innerText = 'Salvando...';
+                const dados = {
+                    nome: document.getElementById('editMembroNome').value,
+                    nascimento: document.getElementById('editMembroNasc').value || null,
+                    telefone: document.getElementById('editMembroTel').value || null,
+                    celula_id: document.getElementById('editMembroCelula').value || null,
+                    categoria: document.getElementById('editMembroCat').value,
+                    batizado: document.getElementById('editMembroBatizado').checked ? 'Sim' : 'Não',
+                    encontro: document.getElementById('editMembroEncontro').checked ? 'Sim' : 'Não',
+                    lider_treinamento: document.getElementById('editMembroLiderTreinamento').checked ? 'Sim' : 'Não',
+                    frequenta_culto_kids: document.getElementById('editMembroFrequentaKids').checked ? 'Sim' : 'Não',
+                    pai_nome: document.getElementById('editMembroPaiNome').value || null,
+                    pai_crente: document.getElementById('editMembroPaiCrente').value || 'Não',
+                    pai_igreja: document.getElementById('editMembroPaiIgreja').value || null,
+                    mae_nome: document.getElementById('editMembroMaeNome').value || null,
+                    mae_crente: document.getElementById('editMembroMaeCrente').value || 'Não',
+                    mae_igreja: document.getElementById('editMembroMaeIgreja').value || null
+                };
+                try {
+                    const { error } = await supabaseClient.from('rk_pessoas').update(dados).eq('id', id);
+                    if (error) throw error;
+                    await registrarLogAcao(`Editou criança: ${dados.nome}`);
+                    alert('Atualizado com sucesso!');
+                    fecharModalEditarMembro();
+                    await carregarTudo();
+                    if (celulaAtiva) await abrirModalCelula(celulaAtiva.id);
+                } catch (err) {
+                    alert('Erro ao atualizar: ' + err.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = 'Salvar';
+                }
+            };
+        }
+
+        // --- Relatório da célula (criar) ---
+        const formRel = document.getElementById('formCriarRelatorio');
+        if (formRel) formRel.onsubmit = salvarRelatorio;
     }
 
     // ================================================================
